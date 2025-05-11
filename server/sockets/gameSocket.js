@@ -1,0 +1,68 @@
+const { gameOfLife, initBoard } = require("../game/gameEngine.js");
+
+module.exports = function(io) {
+    const rooms = {};
+
+    io.on('connection', (socket) => {
+        console.log(`Client connected: ${socket.id}`);
+
+        socket.on('joinRoom', (roomId, width, height) => {
+            if (!rooms[roomId]) {
+                rooms[roomId] = {
+                    board: initBoard(height, width, false),
+                    isRunning: false,
+                    intervalId: null
+                };
+            }
+
+            socket.join(roomId);
+            socket.emit("init", rooms[roomId].board);
+            socket.emit("status", rooms[roomId].isRunning);
+        });
+
+        socket.on('toggleRun', (roomId) => {
+            if (rooms[roomId]) {
+                const room = rooms[roomId];
+                room.isRunning = !room.isRunning;
+                io.to(roomId).emit("status", room.isRunning);
+
+                if (room.isRunning) {
+                    room.intervalId = setInterval(() => {
+                        room.board = gameOfLife(room.board);
+                        io.to(roomId).emit("update", room.board);
+                    }, 100);
+                } else {
+                    clearInterval(room.intervalId);
+                }
+            }
+        });
+
+        socket.on("stepOnce", (roomId) => {
+            if (rooms[roomId]) {
+                const room = rooms[roomId];
+                room.board = gameOfLife(room.board);
+                io.to(roomId).emit('update', room.board);
+            }
+        });
+
+        socket.on("reset", (roomId) => {
+            if (rooms[roomId]) {
+                const room = rooms[roomId];
+                const { width, height } = room.board[0].length ? { width: room.board[0].length, height: room.board.length } : { width: 25, height: 25 };
+                room.board = initBoard(height, width, false);
+                io.to(roomId).emit("update", room.board);
+            }
+        });
+
+        socket.on("updateCell", (roomId, i, j, value) => {
+            if (rooms[roomId]) {
+                rooms[roomId].board[i][j] = value;
+                io.to(roomId).emit("update", rooms[roomId].board);
+            }
+        });
+
+        socket.on("disconnect", () => {
+            console.log("Client Disconnected");
+        });
+    });
+};

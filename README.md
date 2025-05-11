@@ -1,2 +1,3 @@
-# conway-together
-multiplayer conway's game of life
+# mp-conway-sandbox
+
+A multiplayer-based sandbox for Conway's Game of Life!

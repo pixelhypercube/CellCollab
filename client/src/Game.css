@@ -1,0 +1,32 @@
+header {
+    padding:2%;
+    margin-bottom:20px;
+    background:rgb(177, 177, 177);
+}
+
+/* main container */
+#main-container {
+    max-width:500px;
+    justify-content: space-evenly;
+}
+
+/* table */
+table.grid {
+  border-collapse: collapse;
+  margin: auto;
+  max-width:1000px;
+}
+
+.cell {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #ccc;
+}
+
+.alive {
+  background-color: black;
+}
+
+.dead {
+  background-color: white;
+}
