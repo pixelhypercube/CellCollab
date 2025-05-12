@@ -2,11 +2,25 @@ const { gameOfLife, initBoard, resizeBoard } = require("../game/gameEngine.js");
 
 module.exports = function(io) {
     const rooms = {};
-
+    
+    const DEFAULT_WIDTH = 35, DEFAULT_HEIGHT = 25;
     io.on('connection', (socket) => {
         console.log(`Client connected: ${socket.id}`);
 
-        socket.on('joinRoom', (roomId, width, height) => {
+        socket.on('joinRoom', (roomId) => {
+            if (!rooms[roomId]) {
+                rooms[roomId] = {
+                    board: initBoard(DEFAULT_HEIGHT, DEFAULT_WIDTH, false),
+                    isRunning: false,
+                    intervalId: null
+                };
+            }
+            socket.join(roomId);
+            socket.emit("init", rooms[roomId].board);
+            socket.emit("status", rooms[roomId].isRunning);
+        });
+
+        socket.on('joinRoomWithSettings', (roomId, width, height) => {
             if (!rooms[roomId]) {
                 rooms[roomId] = {
                     board: initBoard(height, width, false),

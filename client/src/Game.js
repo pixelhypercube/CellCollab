@@ -1,10 +1,11 @@
 import React from "react";
 import socket from "./socket";
 import "./Game.css";
-import {Button,Container,Form,Row,Col} from "react-bootstrap";
+import {Button,Container,Form,Row,Col,Alert} from "react-bootstrap";
 import Brush from "./Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 const MySwal = withReactContent(Swal);
 
@@ -15,13 +16,15 @@ export class Game extends React.Component {
             board: [],
             isRunning: false,
             roomId: "",
-            boardWidth: 25,  // default width
-            boardHeight: 25, // default height
+            additionalOptionsEnabled:false,
+            boardWidth: null,
+            boardHeight: null,
             isJoined: false,
             currentBrush:"Default", // brush
             currentBrushBoard:[[1]],
             hoverPosition: null,
             hoverRange: Array.from({length:25}, () => Array(25).fill(0)),
+            fadeOut:false,
         };
     }
 
@@ -47,6 +50,17 @@ export class Game extends React.Component {
 
     // room and board functions
 
+    handleAdditionalSettings = (e) => {
+        if (this.state.additionalOptionsEnabled) {
+            this.setState({ fadeOut: true });
+            setTimeout(() => {
+                this.setState({ additionalOptionsEnabled: false, fadeOut: false });
+            }, 100);
+        } else {
+            this.setState({ additionalOptionsEnabled: true });
+        }
+    }
+
     handleRoomChange = (e) => {
         this.setState({ roomId: e.target.value });
     };
@@ -67,60 +81,71 @@ export class Game extends React.Component {
         });
     };
 
+    // random helper function to detect size
+    
+    isInvalidSize = (value) => {
+        return !value || isNaN(value) || value <= 0;
+    }
+
     handleJoinRoom = () => {
         const { roomId, boardWidth, boardHeight } = this.state;
         if (roomId) {
-            if (boardWidth!==0 && boardHeight!==0) {
-                socket.emit("joinRoom", roomId, boardWidth, boardHeight);
-                this.setState({ isJoined: true });
+            if (this.state.additionalOptionsEnabled) {
+                if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
+                    socket.emit("joinRoomWithSettings", roomId, boardWidth, boardHeight);
+                    this.setState({ isJoined: true });
+                } else {
+                    if (this.isInvalidSize(boardWidth)) {
+                        MySwal.fire({
+                            toast: true,
+                            title: boardWidth === null ? "Please eneter a width" : "Width has to be greater than 0!",
+                            timer: 2000,
+                            timerProgressBar: true,
+                            icon: "warning",
+                            didOpen: () => {
+                                const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                                if (popup) {
+                                    popup.style.width = '200px';
+                                    popup.style.fontSize = '14px';
+                                    popup.style.padding = "10px";
+                                    popup.style.left = "-75px";
+                                    popup.style.top = "200px";
+                                }
+                                const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                                if (popupTitle) popupTitle.style.margin = "0px 1em";
+                            }
+                        });
+                    }
+                    if (this.isInvalidSize(boardHeight)) {
+                        MySwal.fire({
+                            toast: true,
+                            title: boardHeight === null ? "Please enter a height" : "Height has to be greater than 0!",
+                            timer: 2000,
+                            timerProgressBar: true,
+                            icon: "warning",
+                            didOpen: () => {
+                                const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                                if (popup) {
+                                    popup.style.width = '200px';
+                                    popup.style.fontSize = '14px';
+                                    popup.style.left = "75px";
+                                    popup.style.top = "200px";
+                                }
+                                const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                                if (popupTitle) popupTitle.style.margin = "0px 1em";
+                            }
+                        });
+                    }
+                }
             } else {
-                if (boardWidth===0) {
-                    MySwal.fire({
-                        toast:true,
-                        title:"Width has to be greater than 0!",
-                        // timer: 2000,
-                        timerProgressBar: true,
-                        icon:"warning",
-                        didOpen:() => {
-                            const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
-                            if (popup) {
-                                popup.style.width = '200px';
-                                popup.style.fontSize = '14px';
-                                popup.style.padding = "10px";
-                                popup.style.left = "-75px";
-                                popup.style.top = "50px";
-                            }
-                            const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
-                            if (popupTitle) popupTitle.style.margin = "0px 1em";
-                        }
-                    });
-                }
-                if (boardHeight===0) {
-                    MySwal.fire({
-                        toast:true,
-                        title:"Height has to be greater than 0!",
-                        // timer: 2000,
-                        timerProgressBar: true,
-                        icon:"warning",
-                        didOpen:() => {
-                            const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
-                            if (popup) {
-                                popup.style.width = '200px';
-                                popup.style.fontSize = '14px';
-                                popup.style.left = "75px";
-                                popup.style.top = "50px";
-                            }
-                            const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
-                            if (popupTitle) popupTitle.style.margin = "0px 1em";
-                        }
-                    });
-                }
+                socket.emit("joinRoom", roomId);
+                this.setState({ isJoined: true });
             }
         } else {
             MySwal.fire({
                 toast:true,
                 title:"Please enter a Room ID!",
-                // timer: 2000,
+                timer: 2000,
                 timerProgressBar: true,
                 icon:"warning",
                 didOpen:() => {
@@ -178,7 +203,6 @@ export class Game extends React.Component {
         this.setState({hoverPosition:{i, j}});
         let currentBrushBoard = this.state.currentBrushBoard;
         let brushHeight = currentBrushBoard.length, brushWidth = currentBrushBoard[0].length;
-        console.log(brushHeight,brushWidth);
         if (this.state.hoverPosition) {
             let hoverRange = Array.from({length: this.state.boardHeight},() =>
                 Array(this.state.boardWidth).fill(0)
@@ -203,62 +227,78 @@ export class Game extends React.Component {
     }
 
     render() {
-    const { board, isRunning, roomId, boardWidth, boardHeight, isJoined } = this.state;
+    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined } = this.state;
 
     return (
         <div>
             <header>
                 <h1>CellCollab</h1>
-                <h5>A Multiplayer Sandbox Implementation of <a className="text-secondary" href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
-                <a className="text-secondary" href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
+                <h5>A Multiplayer Sandbox Implementation of <a style={{color:"#495057"}} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
+                <a style={{color:"#495057"}} href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
             {!isJoined ? (
-            <Container id="join-room-container">
-                <h4><u>Join/Create a Room</u></h4>
-                <Form>
-                    <Form.Group controlId="formRoomId">
-                        {/* <Form.Label>Room ID</Form.Label> */}
-                        <Form.Control
-                        type="text"
-                        value={roomId}
-                        onChange={this.handleRoomChange}
-                        placeholder="Enter Room ID"
-                        />
-                    </Form.Group>
-                    <br></br>
-                    <h5>Board Settings</h5>
-                    <Row>
-                        <Col>
-                            <Form.Group controlId="formBoardWidth">
-                                <Form.Label>Width</Form.Label>
-                                <Form.Control
-                                type="number"
-                                value={boardWidth}
-                                onChange={this.handleWidthChange}
-                                // min="10"
-                                // max="50"
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col>
-                            <Form.Group controlId="formBoardHeight">
-                                <Form.Label>Height</Form.Label>
-                                <Form.Control
-                                type="number"
-                                value={boardHeight}
-                                onChange={this.handleHeightChange}
-                                // min="10"
-                                // max="50"
-                                />
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                    <hr></hr>
-                    <Button variant="primary" onClick={this.handleJoinRoom}>
-                        Join/Create Room
-                    </Button>
-                </Form>
-            </Container>
+            <div className={`additional-settings-wrapper ${this.state.additionalOptionsEnabled ? 'open' : 'closed'}`}>
+                <Container id="join-room-container">
+                    <h4><u>Join/Create a Room</u></h4>
+                    <Form>
+                        <Form.Group controlId="formRoomId">
+                        <Form.Label style={{textAlign:"left"}} className="w-100">Room ID:</Form.Label>
+                            <Form.Control
+                            type="text"
+                            value={roomId}
+                            onChange={this.handleRoomChange}
+                            placeholder="Enter Room ID"
+                            />
+                        </Form.Group>
+                        <br></br>
+                        <Form.Group style={{borderBottom:"1px solid grey",marginBottom:"5px"}} controlId="formEnableAdditionalSettings">
+                            <div 
+                                style={{ display: 'flex', justifyContent:"space-between", alignItems: 'center', cursor: 'pointer' }}
+                                onClick={this.handleAdditionalSettings}
+                                >
+                                <h5 style={{ marginRight: '8px' }}>Additional Settings</h5>
+                                {additionalOptionsEnabled ? <FaChevronUp /> : <FaChevronDown />}
+                            </div>
+                        </Form.Group>
+                        {
+                            additionalOptionsEnabled ? 
+                            <div className={this.state.fadeOut ? 'fade-out' : 'fade-in'}>
+                                <Alert variant="danger" style={{textAlign:"left"}}><strong>WARNING:</strong> Changing the size of an existing board may alter its layout and content. Please proceed with caution to avoid unintended changes.</Alert>
+                                <Row id="additional-options">
+                                    <Col>
+                                        <Form.Group controlId="formBoardWidth">
+                                            <Form.Label style={{textAlign:"left"}} className="w-100">Board Width (cells)</Form.Label>
+                                            <Form.Control
+                                            type="number"
+                                            value={boardWidth}
+                                            onChange={this.handleWidthChange}
+                                            // min="10"
+                                            // max="50"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col>
+                                        <Form.Group controlId="formBoardHeight">
+                                            <Form.Label style={{textAlign:"left"}} className="w-100">Board Height (cells)</Form.Label>
+                                            <Form.Control
+                                            type="number"
+                                            value={boardHeight}
+                                            onChange={this.handleHeightChange}
+                                            // min="10"
+                                            // max="50"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+                            </div> : <></>
+                        }
+                        <br></br>
+                        <Button variant="primary" onClick={this.handleJoinRoom}>
+                            Join/Create Room
+                        </Button>
+                    </Form>
+                </Container>
+            </div>
             ) : (
             <div>
                 <h1>Room <span id="copy">{roomId}</span></h1>

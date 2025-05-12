@@ -1,4 +1,4 @@
-function initBoard(rows = 15, cols = 15, randomize = false) {
+function initBoard(rows,cols,randomize) {
     const board = [];
     for (let i = 0;i<rows;i++) {
         const row = [];
