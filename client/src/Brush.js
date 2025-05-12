@@ -19,8 +19,9 @@ export default class Brush extends React.Component {
                         ))}
                     </tbody>
                 </table>
-                <h6>{this.props.title}</h6>
-                <small style={{display:this.props.selected ? "block" : "none"}}>(selected)</small>
+                <hr></hr>
+                <p>{this.props.title}</p>
+                <small style={{display:this.props.selected ? "block" : "none"}}><strong>(selected)</strong></small>
             </div>
         )
     }

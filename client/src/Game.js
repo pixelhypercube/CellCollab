@@ -156,8 +156,14 @@ export class Game extends React.Component {
         let currentBrushBoard = this.state.currentBrushBoard;
         let brushHeight = currentBrushBoard.length, brushWidth = currentBrushBoard[0].length;
         let newValue;
+
+        let boardHeight = this.state.board.length;
+        let boardWidth = this.state.board[0].length;
         for (let di = i, idx = 0;di<i+brushHeight;di++, idx++) {
+            if (di < 0 || di >= boardHeight) continue;
             for (let dj = j, jdx = 0;dj<j+brushWidth;dj++, jdx++) {
+                if (dj < 0 || dj >= boardWidth) continue;
+
                 if (currentBrushBoard[idx][jdx] === 1) {
                     newValue = this.state.board[di][dj] === 1 ? 0 : 1;
                     socket.emit("updateCell",this.state.roomId, di, dj, newValue);
