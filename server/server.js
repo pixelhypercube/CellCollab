@@ -14,7 +14,7 @@ const io = socketIO(server, {
 
 app.use(cors());
 app.get('/', (req, res) => {
-    res.send('Conway server running!');
+    res.send('CellCollab Server Running!');
 });
 
 gameSocket(io);
