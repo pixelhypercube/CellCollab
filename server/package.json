@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "heroku-postbuild": "npm install && npm run build"
+    "heroku-postbuild": "npm install && npm run build",
+    "dev": "if [ \"$IS_HEROKU\" != \"true\" ]; then concurrently \"npm run server\" \"npm run client\"; fi"
   },
   "keywords": [],
   "author": "",
