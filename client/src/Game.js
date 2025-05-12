@@ -3,6 +3,10 @@ import socket from "./socket";
 import "./Game.css";
 import {Button,Container,Form,Row,Col} from "react-bootstrap";
 import Brush from "./Brush";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+
+const MySwal = withReactContent(Swal);
 
 export class Game extends React.Component {
     constructor(props) {
@@ -66,8 +70,71 @@ export class Game extends React.Component {
     handleJoinRoom = () => {
         const { roomId, boardWidth, boardHeight } = this.state;
         if (roomId) {
-            socket.emit("joinRoom", roomId, boardWidth, boardHeight);
-            this.setState({ isJoined: true });
+            if (boardWidth!==0 && boardHeight!==0) {
+                socket.emit("joinRoom", roomId, boardWidth, boardHeight);
+                this.setState({ isJoined: true });
+            } else {
+                if (boardWidth===0) {
+                    MySwal.fire({
+                        toast:true,
+                        title:"Width has to be greater than 0!",
+                        // timer: 2000,
+                        timerProgressBar: true,
+                        icon:"warning",
+                        didOpen:() => {
+                            const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                            if (popup) {
+                                popup.style.width = '200px';
+                                popup.style.fontSize = '14px';
+                                popup.style.padding = "10px";
+                                popup.style.left = "-75px";
+                                popup.style.top = "50px";
+                            }
+                            const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                            if (popupTitle) popupTitle.style.margin = "0px 1em";
+                        }
+                    });
+                }
+                if (boardHeight===0) {
+                    MySwal.fire({
+                        toast:true,
+                        title:"Height has to be greater than 0!",
+                        // timer: 2000,
+                        timerProgressBar: true,
+                        icon:"warning",
+                        didOpen:() => {
+                            const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                            if (popup) {
+                                popup.style.width = '200px';
+                                popup.style.fontSize = '14px';
+                                popup.style.left = "75px";
+                                popup.style.top = "50px";
+                            }
+                            const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                            if (popupTitle) popupTitle.style.margin = "0px 1em";
+                        }
+                    });
+                }
+            }
+        } else {
+            MySwal.fire({
+                toast:true,
+                title:"Please enter a Room ID!",
+                // timer: 2000,
+                timerProgressBar: true,
+                icon:"warning",
+                didOpen:() => {
+                    const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                    if (popup) {
+                        popup.style.width = '250px';
+                        popup.style.fontSize = '14px';
+                        popup.style.padding = "10px";
+                        popup.style.top = "-75px";
+                    }
+                    const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                    if (popupTitle) popupTitle.style.margin = "0px 1em";
+                }
+            });
         }
     };
 
@@ -141,10 +208,10 @@ export class Game extends React.Component {
             </header>
             {!isJoined ? (
             <Container id="join-room-container">
-                <h4>Join or Create a Room</h4>
+                <h4><u>Join/Create a Room</u></h4>
                 <Form>
                     <Form.Group controlId="formRoomId">
-                        <Form.Label>Room ID</Form.Label>
+                        {/* <Form.Label>Room ID</Form.Label> */}
                         <Form.Control
                         type="text"
                         value={roomId}
@@ -152,47 +219,43 @@ export class Game extends React.Component {
                         placeholder="Enter Room ID"
                         />
                     </Form.Group>
-                    <Form.Group controlId="formBoardWidth">
-                        <Form.Label>Board Width</Form.Label>
-                        <Form.Control
-                        type="number"
-                        value={boardWidth}
-                        onChange={this.handleWidthChange}
-                        min="10"
-                        max="50"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="formBoardHeight">
-                        <Form.Label>Board Height</Form.Label>
-                        <Form.Control
-                        type="number"
-                        value={boardHeight}
-                        onChange={this.handleHeightChange}
-                        min="10"
-                        max="50"
-                        />
-                    </Form.Group>
+                    <br></br>
+                    <h5>Board Settings</h5>
+                    <Row>
+                        <Col>
+                            <Form.Group controlId="formBoardWidth">
+                                <Form.Label>Width</Form.Label>
+                                <Form.Control
+                                type="number"
+                                value={boardWidth}
+                                onChange={this.handleWidthChange}
+                                // min="10"
+                                // max="50"
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col>
+                            <Form.Group controlId="formBoardHeight">
+                                <Form.Label>Height</Form.Label>
+                                <Form.Control
+                                type="number"
+                                value={boardHeight}
+                                onChange={this.handleHeightChange}
+                                // min="10"
+                                // max="50"
+                                />
+                            </Form.Group>
+                        </Col>
+                    </Row>
                     <hr></hr>
                     <Button variant="primary" onClick={this.handleJoinRoom}>
-                        Join Room
+                        Join/Create Room
                     </Button>
                 </Form>
             </Container>
             ) : (
             <div>
-                <h1>Room {roomId}</h1>
-                <Container className="d-flex" id="main-container">
-                    <Button variant="primary" onClick={this.handleToggleRun}>
-                        {isRunning ? "Pause" : "Play"}
-                    </Button>
-                    <Button variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
-                        Step
-                    </Button>
-                    <Button variant="primary" onClick={this.handleReset}>
-                        Reset
-                    </Button>
-                </Container>
-                <br></br>
+                <h1>Room <span id="copy">{roomId}</span></h1>
                 <table className="grid">
                     <tbody>
                         {board.map((row, i) => (
@@ -213,6 +276,18 @@ export class Game extends React.Component {
                         ))}
                     </tbody>
                 </table>
+                <br></br>
+                <Container className="d-flex" id="main-container">
+                    <Button variant="primary" onClick={this.handleToggleRun}>
+                        {isRunning ? "Pause" : "Play"}
+                    </Button>
+                    <Button variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
+                        Step
+                    </Button>
+                    <Button variant="primary" onClick={this.handleReset}>
+                        Reset
+                    </Button>
+                </Container>
                 <br></br>
                 <Container>
                     <h4><u>Palette</u></h4>
@@ -364,6 +439,39 @@ export class Game extends React.Component {
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"HWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
                             }} selected={this.state.currentBrush==="HWSS"} title="Heavy-weight Spaceship (HWSS)" color="#ccdeff" borderColor="#0041b8" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                        </Col>
+                    </Row>
+                    <h5>Guns</h5>
+                    <Row>
+                        <Col>
+                        <Brush onClick={()=>{
+                                this.setState({currentBrush:"Gosper Glider Gun", 
+                                    currentBrushBoard:[
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                        [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                                    ]});
+                            }} selected={this.state.currentBrush==="Gosper Glider Gun"} title="Gosper Glider Gun" color="#ddccff" borderColor="#3d00b8" board={[
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                            ]}></Brush>
                         </Col>
                     </Row>
                 </Container>
