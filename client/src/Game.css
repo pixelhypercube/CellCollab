@@ -30,3 +30,7 @@ table.grid {
 .dead {
   background-color: white;
 }
+
+.hover {
+  background-color: #ffa7a733;
+}

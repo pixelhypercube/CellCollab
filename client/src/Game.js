@@ -1,7 +1,8 @@
 import React from "react";
 import socket from "./socket";
 import "./Game.css";
-import {Button,Container,Form} from "react-bootstrap";
+import {Button,Container,Form,Row,Col} from "react-bootstrap";
+import Brush from "./Brush";
 
 export class Game extends React.Component {
     constructor(props) {
@@ -13,6 +14,10 @@ export class Game extends React.Component {
             boardWidth: 25,  // default width
             boardHeight: 25, // default height
             isJoined: false,
+            currentBrush:"default", // brush
+            currentBrushBoard:[[1]],
+            hoverPosition: null,
+            hoverRange: Array.from({length:25}, () => Array(25).fill(0)),
         };
     }
 
@@ -43,11 +48,11 @@ export class Game extends React.Component {
     };
 
     handleWidthChange = (e) => {
-        this.setState({ boardWidth: Number(e.target.value)});
+        this.setState({ boardWidth: Number(e.target.value), hoverRange: Array(this.state.boardHeight).fill(Array(e.target.value).fill(0))});
     };
 
     handleHeightChange = (e) => {
-        this.setState({ boardHeight: Number(e.target.value) });
+        this.setState({ boardHeight: Number(e.target.value), hoverRange: Array(e.target.value).fill(Array(this.state.boardWidth).fill(0))});
     };
 
     handleJoinRoom = () => {
@@ -73,9 +78,48 @@ export class Game extends React.Component {
     };
 
     handleCellClick = (i, j) => {
-        const newValue = this.state.board[i][j] === 1 ? 0 : 1;
-        socket.emit("updateCell",this.state.roomId, i, j, newValue);
+        let currentBrushBoard = this.state.currentBrushBoard;
+        let brushHeight = currentBrushBoard.length, brushWidth = currentBrushBoard[0].length;
+        let newValue;
+        for (let di = i, idx = 0;di<i+brushHeight;di++, idx++) {
+            for (let dj = j, jdx = 0;dj<j+brushWidth;dj++, jdx++) {
+                if (currentBrushBoard[idx][jdx] === 1) {
+                    newValue = this.state.board[di][dj] === 1 ? 0 : 1;
+                    socket.emit("updateCell",this.state.roomId, di, dj, newValue);
+                }
+            }
+        }
     };
+
+    // non-socket functions
+
+    handleMouseOver = (i, j) => {
+        this.setState({hoverPosition:{i, j}});
+        let currentBrushBoard = this.state.currentBrushBoard;
+        let brushHeight = currentBrushBoard.length, brushWidth = currentBrushBoard[0].length;
+        console.log(brushHeight,brushWidth);
+        if (this.state.hoverPosition) {
+            let hoverRange = Array.from({length: this.state.boardHeight},() =>
+                Array(this.state.boardWidth).fill(0)
+            );
+            for (let di = i, idx = 0;di<i+brushHeight;di++, idx++) {
+                for (let dj = j, jdx = 0;dj<j+brushWidth;dj++, jdx++) {
+                    if (
+                        di >= 0 && di < hoverRange.length &&
+                        dj >= 0 && dj < hoverRange[di].length &&
+                        currentBrushBoard[idx][jdx] === 1
+                    ) {
+                        hoverRange[di][dj] = 1;
+                    }
+                }
+            }
+            this.setState({hoverRange});
+        }
+    }
+
+    setCurrentBrush = (currentBrush, currentBrushBoard) => {
+        this.setState({currentBrush,currentBrushBoard});
+    }
 
     render() {
     const { board, isRunning, roomId, boardWidth, boardHeight, isJoined } = this.state;
@@ -83,10 +127,8 @@ export class Game extends React.Component {
     return (
         <div>
             <header>
-            <h1>Conway Multiplayer Sandbox</h1>
+                <h1>Conway Multiplayer Sandbox</h1>
             </header>
-            <Container>
-            </Container>
             {!isJoined ? (
             <Container id="join-room-container">
                 <h4>Join or Create a Room</h4>
@@ -140,7 +182,7 @@ export class Game extends React.Component {
                     Reset
                     </Button>
                 </Container>
-                <hr className="d-flex" style={{justifySelf:"center",maxWidth:"800px",width:"50%"}}></hr>
+                <br></br>
                 <table className="grid">
                     <tbody>
                         {board.map((row, i) => (
@@ -148,14 +190,173 @@ export class Game extends React.Component {
                             {row.map((cell, j) => (
                             <td
                                 key={j}
-                                className={`cell ${cell === 1 ? "alive" : "dead"}`}
+                                className={`cell ${cell === 1 ? "alive" : "dead"} 
+                                    ${this.state.hoverPosition!==null 
+                                        && this.state.hoverRange[i][j]===1 ? 'hover' : ''}
+                                }`}
                                 onClick={() => this.handleCellClick(i, j)}
+                                onMouseOver={() => this.handleMouseOver(i, j)}
+                                onMouseLeave={() => this.setState({ hoverPosition: null })}
                             ></td>
                             ))}
                         </tr>
                         ))}
                     </tbody>
                 </table>
+                <br></br>
+                <Container>
+                    <h4><u>Palette</u></h4>
+                    <h6>Defaults</h6>
+                    <Row>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"Default",currentBrushBoard:[[1]]});
+                            }} title="1x1 Block" color="#ffffcc" board={[[0,0,0],[0,1,0],[0,0,0]]}></Brush>
+                        </Col>
+                    </Row>
+                    <h6>Still Lifes</h6>
+                    <Row>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1],[1,1]]});
+                            }} title="2x2 Block" color="#ffffcc" board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"2x2",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,1,0]]});
+                            }} title="Bee Hive" color="#ffffcc" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"2x2",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,0,1],[0,0,1,0]]});
+                            }} title="Loaf" color="#ffffcc" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,0,1,0],[0,0,0,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1,0],[1,0,1],[0,1,0]]});
+                            }} title="Boat" color="#ffffcc" board={[[0,0,0,0,0],[0,1,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"2x2",currentBrushBoard:[[0,1,0],[1,0,1],[0,1,0]]});
+                            }} title="Tub" color="#ffffcc" board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                        </Col>
+                    </Row>
+                    <h6>Oscillators</h6>
+                    <Row>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"Blinker", currentBrushBoard:[[0,1,0],[0,1,0],[0,1,0]]});
+                            }} title="Blinker (period 2)" color="#ffffcc" board={[[0,1,0],[0,1,0],[0,1,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"Toad", currentBrushBoard:[[0,0,1,1,1,0],[0,1,1,1,0,0]]});
+                            }} title="Toad (period 2)" color="#ffffcc" board={[[0,0,1,1,1,0],[0,1,1,1,0,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"Beacon", currentBrushBoard:[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]});
+                            }} title="Beacon (period 2)" color="#ffffcc" board={[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"Pulsar", 
+                                    currentBrushBoard:[
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    ]});
+                            }} title="Pulsar (period 3)" color="#ffffcc" board={[
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                            ]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"Penta Decathlon", currentBrushBoard:[
+                                    [0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,1,1,1,0,0,0],
+                                    [0,0,1,0,0,0,1,0,0],
+                                    [0,0,1,0,0,0,1,0,0],
+                                    [0,0,0,1,1,1,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,1,1,1,0,0,0],
+                                    [0,0,1,0,0,0,1,0,0],
+                                    [0,0,1,0,0,0,1,0,0],
+                                    [0,0,0,1,1,1,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0],
+                                ]});
+                            }} title="Penta Decathlon (period 15)" color="#ffffcc" board={[
+                                [0,0,0,0,0,0,0,0,0],
+                                [0,0,0,1,1,1,0,0,0],
+                                [0,0,1,0,0,0,1,0,0],
+                                [0,0,1,0,0,0,1,0,0],
+                                [0,0,0,1,1,1,0,0,0],
+                                [0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0],
+                                [0,0,0,0,0,0,0,0,0],
+                                [0,0,0,1,1,1,0,0,0],
+                                [0,0,1,0,0,0,1,0,0],
+                                [0,0,1,0,0,0,1,0,0],
+                                [0,0,0,1,1,1,0,0,0],
+                                [0,0,0,0,0,0,0,0,0],
+                            ]}></Brush>
+                        </Col>
+                    </Row>
+                    <h6>Spaceships</h6>
+                    <Row>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"Glider",currentBrushBoard:[[0,1,0],[0,0,1],[1,1,1]]});
+                            }} title="Glider" color="#ffffcc" board={[[0,1,0],[0,0,1],[1,1,1]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"LWSS",currentBrushBoard:[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]});
+                            }} title="Light-weight Spaceship (LWSS)" color="#ffffcc" board={[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"MWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
+                            }} title="Middle-weight Spaceship (MWSS)" color="#ffffcc" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                        </Col>
+                        <Col>
+                            <Brush onClick={()=>{
+                                this.setState({currentBrush:"HWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
+                            }} title="Heavy-weight Spaceship (HWSS)" color="#ffffcc" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                        </Col>
+                    </Row>
+                </Container>
             </div>
             )}
         </div>

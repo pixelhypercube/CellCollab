@@ -1,0 +1,11 @@
+table.brush-grid {
+  border-collapse: collapse;
+  margin: auto;
+  max-width:1000px;
+}
+
+.brush-cell {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #ccc;
+}
