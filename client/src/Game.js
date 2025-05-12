@@ -139,7 +139,7 @@ export class Game extends React.Component {
                 }
             } else {
                 socket.emit("joinRoom", roomId);
-                this.setState({ isJoined: true });
+                this.setState({ isJoined: true, boardWidth: 35, boardHeight: 25 }); // put default values
             }
         } else {
             MySwal.fire({
