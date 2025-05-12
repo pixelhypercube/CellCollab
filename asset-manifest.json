@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/mp-conway-sandbox/static/css/main.195dcda9.css",
-    "main.js": "/mp-conway-sandbox/static/js/main.4d3a5992.js",
-    "static/js/453.2648fbfc.chunk.js": "/mp-conway-sandbox/static/js/453.2648fbfc.chunk.js",
-    "static/media/Rubik.ttf": "/mp-conway-sandbox/static/media/Rubik.3a4acc0356c6ea73f2c3.ttf",
-    "index.html": "/mp-conway-sandbox/index.html",
-    "main.195dcda9.css.map": "/mp-conway-sandbox/static/css/main.195dcda9.css.map",
-    "main.4d3a5992.js.map": "/mp-conway-sandbox/static/js/main.4d3a5992.js.map",
-    "453.2648fbfc.chunk.js.map": "/mp-conway-sandbox/static/js/453.2648fbfc.chunk.js.map"
+    "main.css": "/CellCollab/static/css/main.6a0302ef.css",
+    "main.js": "/CellCollab/static/js/main.00c2b4ff.js",
+    "static/js/453.2648fbfc.chunk.js": "/CellCollab/static/js/453.2648fbfc.chunk.js",
+    "static/media/Rubik.ttf": "/CellCollab/static/media/Rubik.3a4acc0356c6ea73f2c3.ttf",
+    "index.html": "/CellCollab/index.html",
+    "main.6a0302ef.css.map": "/CellCollab/static/css/main.6a0302ef.css.map",
+    "main.00c2b4ff.js.map": "/CellCollab/static/js/main.00c2b4ff.js.map",
+    "453.2648fbfc.chunk.js.map": "/CellCollab/static/js/453.2648fbfc.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.195dcda9.css",
-    "static/js/main.4d3a5992.js"
+    "static/css/main.6a0302ef.css",
+    "static/js/main.00c2b4ff.js"
   ]
 }
