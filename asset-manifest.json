@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/mp-conway-sandbox/static/css/main.0a6894af.css",
-    "main.js": "/mp-conway-sandbox/static/js/main.3fb42d1c.js",
+    "main.css": "/mp-conway-sandbox/static/css/main.15468b48.css",
+    "main.js": "/mp-conway-sandbox/static/js/main.b5a44c51.js",
     "static/js/453.2648fbfc.chunk.js": "/mp-conway-sandbox/static/js/453.2648fbfc.chunk.js",
     "static/media/Rubik.ttf": "/mp-conway-sandbox/static/media/Rubik.3a4acc0356c6ea73f2c3.ttf",
     "index.html": "/mp-conway-sandbox/index.html",
-    "main.0a6894af.css.map": "/mp-conway-sandbox/static/css/main.0a6894af.css.map",
-    "main.3fb42d1c.js.map": "/mp-conway-sandbox/static/js/main.3fb42d1c.js.map",
+    "main.15468b48.css.map": "/mp-conway-sandbox/static/css/main.15468b48.css.map",
+    "main.b5a44c51.js.map": "/mp-conway-sandbox/static/js/main.b5a44c51.js.map",
     "453.2648fbfc.chunk.js.map": "/mp-conway-sandbox/static/js/453.2648fbfc.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.0a6894af.css",
-    "static/js/main.3fb42d1c.js"
+    "static/css/main.15468b48.css",
+    "static/js/main.b5a44c51.js"
   ]
 }
