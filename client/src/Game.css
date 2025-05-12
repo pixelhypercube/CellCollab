@@ -1,13 +1,13 @@
 header {
-    padding:2%;
-    margin-bottom:20px;
-    background:rgb(177, 177, 177);
+  padding:2%;
+  margin-bottom:20px;
+  background:rgb(177, 177, 177);
 }
 
 /* main container */
 #main-container {
-    max-width:500px;
-    justify-content: space-evenly;
+  max-width:500px;
+  justify-content: space-evenly;
 }
 
 /* table */
@@ -32,5 +32,5 @@ table.grid {
 }
 
 .hover {
-  background-color: #ffa7a733;
+  background-color: #96969633;
 }

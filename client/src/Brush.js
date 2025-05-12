@@ -2,13 +2,9 @@ import React from "react";
 import "./Brush.css";
 
 export default class Brush extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
     render() {
         return (
-            <div style={{background:this.props.color}} onClick={this.props.onClick}>
+            <div className="brush" style={{background:this.props.color,border:`${this.props.selected ? 4 : 2}px solid ${this.props.borderColor}`}} onClick={this.props.onClick}>
                 <table className="brush-grid">
                     <tbody>
                         {this.props.board.map((row, i) => (
@@ -23,7 +19,8 @@ export default class Brush extends React.Component {
                         ))}
                     </tbody>
                 </table>
-                <h5>{this.props.title}</h5>
+                <h6>{this.props.title}</h6>
+                <small style={{display:this.props.selected ? "block" : "none"}}>(selected)</small>
             </div>
         )
     }

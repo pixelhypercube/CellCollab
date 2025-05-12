@@ -14,7 +14,7 @@ export class Game extends React.Component {
             boardWidth: 25,  // default width
             boardHeight: 25, // default height
             isJoined: false,
-            currentBrush:"default", // brush
+            currentBrush:"Default", // brush
             currentBrushBoard:[[1]],
             hoverPosition: null,
             hoverRange: Array.from({length:25}, () => Array(25).fill(0)),
@@ -128,6 +128,7 @@ export class Game extends React.Component {
         <div>
             <header>
                 <h1>Conway Multiplayer Sandbox</h1>
+                <a className="text-secondary" href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
             {!isJoined ? (
             <Container id="join-room-container">
@@ -206,58 +207,58 @@ export class Game extends React.Component {
                 <br></br>
                 <Container>
                     <h4><u>Palette</u></h4>
-                    <h6>Defaults</h6>
+                    <h5>Defaults</h5>
                     <Row>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"Default",currentBrushBoard:[[1]]});
-                            }} title="1x1 Block" color="#ffffcc" board={[[0,0,0],[0,1,0],[0,0,0]]}></Brush>
+                            }} selected={this.state.currentBrush==="Default"} title="1x1 Block" color="#ccffcc" borderColor="#00b800" board={[[0,0,0],[0,1,0],[0,0,0]]}></Brush>
                         </Col>
                     </Row>
-                    <h6>Still Lifes</h6>
+                    <h5>Still Lifes</h5>
                     <Row>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1],[1,1]]});
-                            }} title="2x2 Block" color="#ffffcc" board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
+                            }} selected={this.state.currentBrush==="2x2"} title="2x2 Block" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
-                                this.setState({currentBrush:"2x2",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,1,0]]});
-                            }} title="Bee Hive" color="#ffffcc" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                                this.setState({currentBrush:"Bee Hive",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,1,0]]});
+                            }} selected={this.state.currentBrush==="Bee Hive"} title="Bee Hive" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,1,0,0],[0,0,0,0,0,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
-                                this.setState({currentBrush:"2x2",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,0,1],[0,0,1,0]]});
-                            }} title="Loaf" color="#ffffcc" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,0,1,0],[0,0,0,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                                this.setState({currentBrush:"Loaf",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,0,1],[0,0,1,0]]});
+                            }}  selected={this.state.currentBrush==="Loaf"} title="Loaf" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,0,1,0],[0,0,0,1,0,0],[0,0,0,0,0,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
-                                this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1,0],[1,0,1],[0,1,0]]});
-                            }} title="Boat" color="#ffffcc" board={[[0,0,0,0,0],[0,1,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                                this.setState({currentBrush:"Boat",currentBrushBoard:[[1,1,0],[1,0,1],[0,1,0]]});
+                            }} selected={this.state.currentBrush==="Boat"} title="Boat" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0],[0,1,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
-                                this.setState({currentBrush:"2x2",currentBrushBoard:[[0,1,0],[1,0,1],[0,1,0]]});
-                            }} title="Tub" color="#ffffcc" board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                                this.setState({currentBrush:"Tub",currentBrushBoard:[[0,1,0],[1,0,1],[0,1,0]]});
+                            }} selected={this.state.currentBrush==="Tub"} title="Tub" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
                         </Col>
                     </Row>
-                    <h6>Oscillators</h6>
+                    <h5>Oscillators</h5>
                     <Row>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"Blinker", currentBrushBoard:[[0,1,0],[0,1,0],[0,1,0]]});
-                            }} title="Blinker (period 2)" color="#ffffcc" board={[[0,1,0],[0,1,0],[0,1,0]]}></Brush>
+                            }} selected={this.state.currentBrush==="Blinker"} title="Blinker (period 2)" color="#ffdecc" borderColor="#b84100" board={[[0,1,0],[0,1,0],[0,1,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"Toad", currentBrushBoard:[[0,0,1,1,1,0],[0,1,1,1,0,0]]});
-                            }} title="Toad (period 2)" color="#ffffcc" board={[[0,0,1,1,1,0],[0,1,1,1,0,0]]}></Brush>
+                            }} selected={this.state.currentBrush==="Toad"} title="Toad (period 2)" color="#ffdecc" borderColor="#b84100" board={[[0,0,1,1,1,0],[0,1,1,1,0,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"Beacon", currentBrushBoard:[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]});
-                            }} title="Beacon (period 2)" color="#ffffcc" board={[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]}></Brush>
+                            }} selected={this.state.currentBrush==="Beacon"} title="Beacon (period 2)" color="#ffdecc" borderColor="#b84100" board={[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
@@ -279,7 +280,7 @@ export class Game extends React.Component {
                                         [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
                                         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                     ]});
-                            }} title="Pulsar (period 3)" color="#ffffcc" board={[
+                            }} selected={this.state.currentBrush==="Pulsar"} title="Pulsar (period 3)" color="#ffdecc" borderColor="#b84100" board={[
                                 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                 [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
                                 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -315,7 +316,7 @@ export class Game extends React.Component {
                                     [0,0,0,1,1,1,0,0,0],
                                     [0,0,0,0,0,0,0,0,0],
                                 ]});
-                            }} title="Penta Decathlon (period 15)" color="#ffffcc" board={[
+                            }} selected={this.state.currentBrush==="Penta Decathlon"} title="Penta Decathlon (period 15)" color="#ffdecc" borderColor="#b84100" board={[
                                 [0,0,0,0,0,0,0,0,0],
                                 [0,0,0,1,1,1,0,0,0],
                                 [0,0,1,0,0,0,1,0,0],
@@ -333,27 +334,27 @@ export class Game extends React.Component {
                             ]}></Brush>
                         </Col>
                     </Row>
-                    <h6>Spaceships</h6>
+                    <h5>Spaceships</h5>
                     <Row>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"Glider",currentBrushBoard:[[0,1,0],[0,0,1],[1,1,1]]});
-                            }} title="Glider" color="#ffffcc" board={[[0,1,0],[0,0,1],[1,1,1]]}></Brush>
+                            }} selected={this.state.currentBrush==="Glider"} title="Glider" color="#ccdeff" borderColor="#0041b8" board={[[0,1,0],[0,0,1],[1,1,1]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"LWSS",currentBrushBoard:[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]});
-                            }} title="Light-weight Spaceship (LWSS)" color="#ffffcc" board={[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]}></Brush>
+                            }} selected={this.state.currentBrush==="LWSS"} title="Light-weight Spaceship (LWSS)" color="#ccdeff" borderColor="#0041b8" board={[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"MWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
-                            }} title="Middle-weight Spaceship (MWSS)" color="#ffffcc" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                            }} selected={this.state.currentBrush==="MWSS"} title="Middle-weight Spaceship (MWSS)" color="#ccdeff" borderColor="#0041b8" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
                         </Col>
                         <Col>
                             <Brush onClick={()=>{
                                 this.setState({currentBrush:"HWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
-                            }} title="Heavy-weight Spaceship (HWSS)" color="#ffffcc" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                            }} selected={this.state.currentBrush==="HWSS"} title="Heavy-weight Spaceship (HWSS)" color="#ccdeff" borderColor="#0041b8" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
                         </Col>
                     </Row>
                 </Container>

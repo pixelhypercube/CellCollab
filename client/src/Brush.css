@@ -1,11 +1,18 @@
+.brush {
+    border-radius:20px;
+    padding:10px;
+    margin:10px 0px 10px 0px;
+}
+
+/* brush grid */
 table.brush-grid {
-  border-collapse: collapse;
-  margin: auto;
-  max-width:1000px;
+    border-collapse: collapse;
+    margin: auto;
+    max-width:1000px;
 }
 
 .brush-cell {
-  width: 10px;
-  height: 10px;
-  border: 1px solid #ccc;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #ccc;
 }
