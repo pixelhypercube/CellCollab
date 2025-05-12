@@ -127,7 +127,7 @@ export class Game extends React.Component {
     return (
         <div>
             <header>
-                <h1>Conway Multiplayer Sandbox</h1>
+                <h1>Multiplayer Conway Sandbox</h1>
                 <a className="text-secondary" href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
             {!isJoined ? (
