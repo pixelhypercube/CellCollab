@@ -127,7 +127,8 @@ export class Game extends React.Component {
     return (
         <div>
             <header>
-                <h1>Multiplayer Conway Sandbox</h1>
+                <h1>CellCollab</h1>
+                <h5>A Multiplayer Sandbox Implementation of <a className="text-secondary" href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
                 <a className="text-secondary" href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
             {!isJoined ? (
