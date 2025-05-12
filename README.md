@@ -1,10 +1,10 @@
-# 🧬 mp-conway-sandbox
+# 🧬 CellCollab
 
 <img alt="demo" src="./demo.gif"/>
 
-A multiplayer sandbox implementation of **Conway's Game of Life** with real-time interaction and **custom brushes**! This project is built with **React.js** and **Socket.IO**, allowing users to collaborate and simulate cellular automata together in real-time.
+**CellCollab** is a multiplayer sandbox implementation of **Conway's Game of Life** with real-time interaction and **custom brushes**! This project is built with **React.js** and **Socket.IO**, allowing users to collaborate and simulate cellular automata together in real-time.
 
-🔗 **Live demo**: [https://pixelhypercube.github.io/mp-conway-sandbox/](https://pixelhypercube.github.io/mp-conway-sandbox/)
+🔗 **Live demo (CellCollab)**: [https://pixelhypercube.github.io/CellCollab/](https://pixelhypercube.github.io/CellCollab/)
 
 ---
 
@@ -39,7 +39,7 @@ Choose from a palette of predefined brushes (e.g. Glider, Toad, Pulsar) to stamp
 
 ---
 
-## 🧪 Beginner Tutorial: How to Use mp-conway-sandbox
+## 🧪 Beginner Tutorial: How to Use CellCollab
 
 ### ✅ Step 1: Join or Create a Room
 
@@ -106,8 +106,8 @@ Click on any cell to toggle its state. Changes are broadcast in real-time to all
 ## 📦 Getting Started (Local Setup)
 
 ```
-git clone https://github.com/pixelhypercube/mp-conway-sandbox.git
-cd mp-conway-sandbox
+git clone https://github.com/pixelhypercube/CellCollab.git
+cd CellCollab
 npm install
 npm start
 ```
