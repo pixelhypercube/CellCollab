@@ -48,11 +48,19 @@ export class Game extends React.Component {
     };
 
     handleWidthChange = (e) => {
-        this.setState({ boardWidth: Number(e.target.value), hoverRange: Array(this.state.boardHeight).fill(Array(e.target.value).fill(0))});
+        const newWidth = Number(e.target.value);
+        this.setState({
+            boardWidth: newWidth,
+            hoverRange: Array.from({ length: this.state.boardHeight }, () => Array(newWidth).fill(0))
+        });
     };
 
     handleHeightChange = (e) => {
-        this.setState({ boardHeight: Number(e.target.value), hoverRange: Array(e.target.value).fill(Array(this.state.boardWidth).fill(0))});
+        const newHeight = Number(e.target.value);
+        this.setState({
+            boardHeight: newHeight,
+            hoverRange: Array.from({ length: newHeight }, () => Array(this.state.boardWidth).fill(0))
+        });
     };
 
     handleJoinRoom = () => {
@@ -102,8 +110,8 @@ export class Game extends React.Component {
             let hoverRange = Array.from({length: this.state.boardHeight},() =>
                 Array(this.state.boardWidth).fill(0)
             );
-            for (let di = i, idx = 0;di<i+brushHeight;di++, idx++) {
-                for (let dj = j, jdx = 0;dj<j+brushWidth;dj++, jdx++) {
+            for (let di = i,idx = 0;di < i + brushHeight;di++, idx++) {
+                for (let dj = j,jdx = 0;dj < j + brushWidth;dj++, jdx++) {
                     if (
                         di >= 0 && di < hoverRange.length &&
                         dj >= 0 && dj < hoverRange[di].length &&
@@ -151,7 +159,7 @@ export class Game extends React.Component {
                         value={boardWidth}
                         onChange={this.handleWidthChange}
                         min="10"
-                        max="100"
+                        max="50"
                         />
                     </Form.Group>
                     <Form.Group controlId="formBoardHeight">
@@ -161,7 +169,7 @@ export class Game extends React.Component {
                         value={boardHeight}
                         onChange={this.handleHeightChange}
                         min="10"
-                        max="100"
+                        max="50"
                         />
                     </Form.Group>
                     <hr></hr>
@@ -175,13 +183,13 @@ export class Game extends React.Component {
                 <h1>Room {roomId}</h1>
                 <Container className="d-flex" id="main-container">
                     <Button variant="primary" onClick={this.handleToggleRun}>
-                    {isRunning ? "Pause" : "Play"}
+                        {isRunning ? "Pause" : "Play"}
                     </Button>
                     <Button variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
-                    Step
+                        Step
                     </Button>
                     <Button variant="primary" onClick={this.handleReset}>
-                    Reset
+                        Reset
                     </Button>
                 </Container>
                 <br></br>
@@ -194,7 +202,7 @@ export class Game extends React.Component {
                                 key={j}
                                 className={`cell ${cell === 1 ? "alive" : "dead"} 
                                     ${this.state.hoverPosition!==null 
-                                        && this.state.hoverRange[i][j]===1 ? 'hover' : ''}
+                                        && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
                                 }`}
                                 onClick={() => this.handleCellClick(i, j)}
                                 onMouseOver={() => this.handleMouseOver(i, j)}

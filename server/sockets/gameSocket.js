@@ -1,4 +1,4 @@
-const { gameOfLife, initBoard } = require("../game/gameEngine.js");
+const { gameOfLife, initBoard, resizeBoard } = require("../game/gameEngine.js");
 
 module.exports = function(io) {
     const rooms = {};
@@ -13,6 +13,16 @@ module.exports = function(io) {
                     isRunning: false,
                     intervalId: null
                 };
+            } else {
+                if (rooms[roomId].board) {
+                    // check whether to resize board or not
+                    let board = rooms[roomId].board;
+                    const boardHeight = board.length;
+                    const boardWidth = board[0].length;
+                    if (height != boardHeight || width != boardWidth) {
+                        rooms[roomId].board = resizeBoard(height,width,board);
+                    }
+                }
             }
 
             socket.join(roomId);

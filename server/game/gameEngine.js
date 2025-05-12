@@ -10,6 +10,24 @@ function initBoard(rows = 15, cols = 15, randomize = false) {
     return board;
 }
 
+function resizeBoard(newRows,newCols,board) {
+    let rows = board.length;
+    let cols = board[0]?.length || 0;
+    if (rows==newRows && cols==newCols) return; // edge case
+
+    // ROWS
+    if (rows<newRows) for (let i = 0;i<newRows-rows;i++) board.push(new Array(cols).fill(0));
+    else if (rows>newRows) board.splice(newRows);
+
+    // COLS
+    rows = board.length;
+    for (let i = 0;i<rows;i++) {
+        if (cols<newCols) for (let j = 0;j<newCols-cols;j++) board[i].push(0);
+        else if (cols>newCols) board[i].splice(newCols);
+    }
+    return board;
+}
+
 function gameOfLife(board) {
     const n = board.length;
     const m = board[0].length;
@@ -44,4 +62,4 @@ function gameOfLife(board) {
     return board;
 }
 
-module.exports = {gameOfLife,initBoard};
+module.exports = {gameOfLife,resizeBoard,initBoard};
