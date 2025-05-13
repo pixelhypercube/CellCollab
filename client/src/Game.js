@@ -333,12 +333,12 @@ export class Game extends React.Component {
                     <h4><u>Join/Create a Room</u></h4>
                     <Form>
                         <Form.Group controlId="formRoomId">
-                        <Form.Label style={{textAlign:"left"}} className="w-100">Room ID:</Form.Label>
+                        <Form.Label style={{textAlign:"left"}} className="w-100">Room ID (Leave blank to create a new room):</Form.Label>
                             <Form.Control
                             type="text"
                             value={roomId}
                             onChange={this.handleRoomChange}
-                            placeholder="Enter Room ID"
+                            placeholder="Room ID"
                             />
                         </Form.Group>
                         <br></br>
