@@ -6,6 +6,7 @@ import Brush from "./Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+// import CryptoJS from "crypto-js";
 
 const MySwal = withReactContent(Swal);
 
@@ -39,6 +40,20 @@ export class Game extends React.Component {
 
         socket.on("status", (status) => {
             this.setState({isRunning:status});
+        });
+
+        socket.on("hashedRoomId",(roomId)=>{
+            this.setState({roomId});
+        });
+
+        socket.on("roomExists",(roomId,roomExists)=>{
+            this.setState({isJoined:roomExists});
+            if (!roomExists) {
+                Swal.fire({
+                    title:`Sorry, room '${roomId}' doesn't exist!`,
+                    icon:"error",
+                });
+            }
         });
     }
 
@@ -89,18 +104,21 @@ export class Game extends React.Component {
 
     handleJoinRoom = () => {
         const { roomId, boardWidth, boardHeight } = this.state;
+        // if there's roomid
         if (roomId) {
+            // check if room exists
+
             if (this.state.additionalOptionsEnabled) {
                 if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
                     socket.emit("joinRoomWithSettings", roomId, boardWidth, boardHeight);
-                    this.setState({ isJoined: true, 
-                        hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0))
+                    this.setState({ 
+                        hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0)),
                     });
                 } else {
                     if (this.isInvalidSize(boardWidth)) {
                         MySwal.fire({
                             toast: true,
-                            title: boardWidth === null ? "Please eneter a width" : "Width has to be greater than 0!",
+                            title: boardWidth === null ? "Please enter a width" : "Width has to be greater than 0!",
                             timer: 2000,
                             timerProgressBar: true,
                             icon: "warning",
@@ -142,31 +160,89 @@ export class Game extends React.Component {
             } else {
                 socket.emit("joinRoom", roomId);
                 this.setState({ 
-                    isJoined: true, 
                     boardWidth: 35, 
                     boardHeight: 25, 
                     hoverRange: Array.from({ length: 35 }, () => Array(25).fill(0))
-                }); // put default values
+                });
             }
-        } else {
-            MySwal.fire({
-                toast:true,
-                title:"Please enter a Room ID!",
-                timer: 2000,
-                timerProgressBar: true,
-                icon:"warning",
-                didOpen:() => {
-                    const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
-                    if (popup) {
-                        popup.style.width = '250px';
-                        popup.style.fontSize = '14px';
-                        popup.style.padding = "10px";
-                        popup.style.top = "-75px";
+        } else { // without roomId
+            if (this.state.additionalOptionsEnabled) {
+                if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
+                    socket.emit("joinRoomWithSettings", "", boardWidth, boardHeight);
+                    this.setState({ 
+                        hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0)),
+                    });
+                } else {
+                    if (this.isInvalidSize(boardWidth)) {
+                        MySwal.fire({
+                            toast: true,
+                            title: boardWidth === null ? "Please enter a width" : "Width has to be greater than 0!",
+                            timer: 2000,
+                            timerProgressBar: true,
+                            icon: "warning",
+                            didOpen: () => {
+                                const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                                if (popup) {
+                                    popup.style.width = '200px';
+                                    popup.style.fontSize = '14px';
+                                    popup.style.padding = "10px";
+                                    popup.style.left = "-75px";
+                                    popup.style.top = "200px";
+                                }
+                                const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                                if (popupTitle) popupTitle.style.margin = "0px 1em";
+                            }
+                        });
                     }
-                    const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
-                    if (popupTitle) popupTitle.style.margin = "0px 1em";
+                    if (this.isInvalidSize(boardHeight)) {
+                        MySwal.fire({
+                            toast: true,
+                            title: boardHeight === null ? "Please enter a height" : "Height has to be greater than 0!",
+                            timer: 2000,
+                            timerProgressBar: true,
+                            icon: "warning",
+                            didOpen: () => {
+                                const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                                if (popup) {
+                                    popup.style.width = '200px';
+                                    popup.style.fontSize = '14px';
+                                    popup.style.left = "75px";
+                                    popup.style.top = "200px";
+                                }
+                                const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                                if (popupTitle) popupTitle.style.margin = "0px 1em";
+                            }
+                        });
+                    }
                 }
-            });
+            } else {
+                socket.emit("joinRoom","");
+                this.setState({ 
+                    boardWidth: 35, 
+                    boardHeight: 25, 
+                    hoverRange: Array.from({ length: 35 }, () => Array(25).fill(0))
+                });
+            }
+
+            // no need the alert anymore
+            // MySwal.fire({
+            //     toast:true,
+            //     title:"Please enter a Room ID!",
+            //     timer: 2000,
+            //     timerProgressBar: true,
+            //     icon:"warning",
+            //     didOpen:() => {
+            //         const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+            //         if (popup) {
+            //             popup.style.width = '250px';
+            //             popup.style.fontSize = '14px';
+            //             popup.style.padding = "10px";
+            //             popup.style.top = "-75px";
+            //         }
+            //         const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+            //         if (popupTitle) popupTitle.style.margin = "0px 1em";
+            //     }
+            // });
         }
     };
 

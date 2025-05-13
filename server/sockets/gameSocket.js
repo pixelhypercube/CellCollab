@@ -1,47 +1,110 @@
 const { gameOfLife, initBoard, resizeBoard } = require("../game/gameEngine.js");
 
 module.exports = function(io) {
+    // modules
+    const crypto = require("crypto");
+
     const rooms = {};
+
+    
+    const generateRoomId = (socketId) => {
+        const timestamp = Date.now().toString();
+        const random = crypto.randomBytes(4).toString('hex'); // 8 chars
+        const raw = `${socketId}-${timestamp}-${random}`;
+        return crypto.createHash('sha1').update(raw).digest('hex').slice(0, 8); // 8-char room ID
+    };
     
     const DEFAULT_WIDTH = 35, DEFAULT_HEIGHT = 25;
     io.on('connection', (socket) => {
         console.log(`Client connected: ${socket.id}`);
 
         socket.on('joinRoom', (roomId) => {
-            if (!rooms[roomId]) {
-                rooms[roomId] = {
-                    board: initBoard(DEFAULT_HEIGHT, DEFAULT_WIDTH, false),
-                    isRunning: false,
-                    intervalId: null
-                };
+            if (roomId === "" || roomId.length == 0) {
+                roomId = generateRoomId(roomId);
+                if (!rooms[roomId]) {
+                    rooms[roomId] = {
+                        board: initBoard(DEFAULT_HEIGHT, DEFAULT_WIDTH, false),
+                        isRunning: false,
+                        intervalId: null
+                    };
+                }
+                socket.join(roomId);
+                socket.emit("roomExists",roomId,true);
+                socket.emit("init", rooms[roomId].board);
+                socket.emit("status", rooms[roomId].isRunning);
+                socket.emit("hashedRoomId", roomId);
             }
-            socket.join(roomId);
-            socket.emit("init", rooms[roomId].board);
-            socket.emit("status", rooms[roomId].isRunning);
+            else {
+                if (!rooms[roomId]) socket.emit("roomExists",roomId,false);
+                else {
+                    socket.join(roomId);
+                    socket.emit("roomExists",roomId,true);
+                    socket.emit("init", rooms[roomId].board);
+                    socket.emit("status", rooms[roomId].isRunning);
+                    socket.emit("hashedRoomId", roomId);
+                }
+            }
         });
 
         socket.on('joinRoomWithSettings', (roomId, width, height) => {
-            if (!rooms[roomId]) {
-                rooms[roomId] = {
-                    board: initBoard(height, width, false),
-                    isRunning: false,
-                    intervalId: null
-                };
-            } else {
-                if (rooms[roomId].board) {
-                    // check whether to resize board or not
-                    let board = rooms[roomId].board;
-                    const boardHeight = board.length;
-                    const boardWidth = board[0].length;
-                    if (height != boardHeight || width != boardWidth) {
-                        rooms[roomId].board = resizeBoard(height,width,board);
+            if (roomId === "" || roomId.length == 0) {
+                roomId = generateRoomId(roomId);
+                if (!rooms[roomId]) {
+                    rooms[roomId] = {
+                        board: initBoard(height, width, false),
+                        isRunning: false,
+                        intervalId: null
+                    };
+                    socket.join(roomId);
+                    socket.emit("roomExists",roomId,true);
+                    socket.emit("init", rooms[roomId].board);
+                    socket.emit("status", rooms[roomId].isRunning);
+                    socket.emit("hashedRoomId", roomId);
+                } else {
+                    if (rooms[roomId].board) {
+                        // check whether to resize board or not
+                        let board = rooms[roomId].board;
+                        const boardHeight = board.length;
+                        const boardWidth = board[0].length;
+                        console.log(height,boardHeight,width,boardWidth);
+                        if (height != boardHeight || width != boardWidth) {
+                            rooms[roomId].board = resizeBoard(height,width,board);
+                        }
+                        socket.join(roomId);
+                        socket.emit("roomExists",roomId,true);
+                        socket.emit("init", rooms[roomId].board);
+                        socket.emit("status", rooms[roomId].isRunning);
+                        socket.emit("hashedRoomId", roomId);
                     }
                 }
             }
+            else {
+                if (!rooms[roomId]) socket.emit("roomExists",roomId,false);
+                else {
 
-            socket.join(roomId);
-            socket.emit("init", rooms[roomId].board);
-            socket.emit("status", rooms[roomId].isRunning);
+                    if (rooms[roomId].board) {
+                        // check whether to resize board or not
+                        let board = rooms[roomId].board;
+                        const boardHeight = board.length;
+                        const boardWidth = board[0].length;
+                        console.log(height,boardHeight,width,boardWidth);
+                        if (height != boardHeight || width != boardWidth) {
+                            rooms[roomId].board = resizeBoard(height,width,board);
+                        }
+                        socket.join(roomId);
+                        socket.emit("roomExists",roomId,true);
+                        socket.emit("init", rooms[roomId].board);
+                        socket.emit("status", rooms[roomId].isRunning);
+                        socket.emit("hashedRoomId", roomId);
+                    }
+
+                    socket.join(roomId);
+                    socket.emit("roomExists",roomId,true);
+                    socket.emit("init", rooms[roomId].board);
+                    socket.emit("status", rooms[roomId].isRunning);
+                    socket.emit("hashedRoomId", roomId);
+                }
+            } 
         });
 
         socket.on('toggleRun', (roomId) => {
@@ -54,7 +117,7 @@ module.exports = function(io) {
                     room.intervalId = setInterval(() => {
                         room.board = gameOfLife(room.board);
                         io.to(roomId).emit("update", room.board);
-                    }, 100);
+                    }, 50);
                 } else {
                     clearInterval(room.intervalId);
                 }
