@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/CellCollab/static/css/main.c078b59c.css",
-    "main.js": "/CellCollab/static/js/main.ba0ca0b7.js",
+    "main.js": "/CellCollab/static/js/main.d679c0a5.js",
     "static/js/453.2648fbfc.chunk.js": "/CellCollab/static/js/453.2648fbfc.chunk.js",
     "static/media/Rubik.ttf": "/CellCollab/static/media/Rubik.3a4acc0356c6ea73f2c3.ttf",
     "index.html": "/CellCollab/index.html",
     "main.c078b59c.css.map": "/CellCollab/static/css/main.c078b59c.css.map",
-    "main.ba0ca0b7.js.map": "/CellCollab/static/js/main.ba0ca0b7.js.map",
+    "main.d679c0a5.js.map": "/CellCollab/static/js/main.d679c0a5.js.map",
     "453.2648fbfc.chunk.js.map": "/CellCollab/static/js/453.2648fbfc.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.c078b59c.css",
-    "static/js/main.ba0ca0b7.js"
+    "static/js/main.d679c0a5.js"
   ]
 }
