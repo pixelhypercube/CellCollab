@@ -4,7 +4,8 @@ import "./Brush.css";
 export default class Brush extends React.Component {
     render() {
         return (
-            <div className="brush" style={{background:this.props.color,border:`${this.props.selected ? 4 : 2}px solid ${this.props.borderColor}`}} onClick={this.props.onClick}>
+            <div className="brush" style={{filter:`saturate(${this.props.selected ? 2 : 1})`,background:this.props.color,border:`${this.props.selected ? 4 : 2}px solid ${this.props.borderColor}`}} onClick={this.props.onClick}>
+                <small style={{display:this.props.selected ? "block" : "none",marginBottom:"5px"}}>(selected)</small>
                 <table className="brush-grid">
                     <tbody>
                         {this.props.board.map((row, i) => (
@@ -19,9 +20,8 @@ export default class Brush extends React.Component {
                         ))}
                     </tbody>
                 </table>
-                <hr></hr>
-                <p>{this.props.title}</p>
-                <small style={{display:this.props.selected ? "block" : "none"}}><strong>(selected)</strong></small>
+                {/* <hr></hr> */}
+                <h6 style={{marginTop:"5px",marginBottom:"0px"}}>{this.props.title}</h6>
             </div>
         )
     }

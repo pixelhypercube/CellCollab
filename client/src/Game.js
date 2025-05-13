@@ -488,7 +488,7 @@ export class Game extends React.Component {
                     </Container>
                     <br></br>
                     <Container>
-                        <h4><u>Palette</u></h4>
+                        <h3><u>Palette</u></h3>
                         <h5>Defaults</h5>
                         <Row>
                             <Col>
@@ -635,11 +635,23 @@ export class Game extends React.Component {
                             </Col>
                             <Col>
                                 <Brush onClick={()=>{
-                                    this.setState({currentBrush:"HWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
-                                }} selected={this.state.currentBrush==="HWSS"} darkMode={darkMode} title="Heavy-weight Spaceship (HWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                                    this.setState({currentBrush:"HWSS",currentBrushBoard:[
+                                        [0,1,1,1,1,1,1],
+                                        [1,0,0,0,0,0,1],
+                                        [0,0,0,0,0,0,1],
+                                        [1,0,0,0,0,1,0],
+                                        [0,0,1,1,0,0,0]
+                                    ]});
+                                }} selected={this.state.currentBrush==="HWSS"} darkMode={darkMode} title="Heavy-weight Spaceship (HWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[
+                                    [0,1,1,1,1,1,1],
+                                    [1,0,0,0,0,0,1],
+                                    [0,0,0,0,0,0,1],
+                                    [1,0,0,0,0,1,0],
+                                    [0,0,1,1,0,0,0]
+                                ]}></Brush>
                             </Col>
                         </Row>
-                        <h5>Guns</h5>
+                        <h5>Perpetual Patterns</h5>
                         <Row>
                             <Col>
                             <Brush onClick={()=>{
@@ -669,6 +681,25 @@ export class Game extends React.Component {
                                     [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                     [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                                ]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Block-Laying Switch Engine",currentBrushBoard:[
+                                        [0,0,0,0,0,0,1,0],
+                                        [0,0,0,0,1,0,1,1],
+                                        [0,0,0,0,1,0,1,0],
+                                        [0,0,0,0,1,0,0,0],
+                                        [0,0,1,0,0,0,0,0],
+                                        [1,0,1,0,0,0,0,0]
+                                    ]});
+                                }} selected={this.state.currentBrush==="Block-Laying Switch Engine"} darkMode={darkMode} title="Block-Laying Switch Engine" color={darkMode ? "#110033" : "#ddccff"} borderColor={darkMode ? "#8547ff" : "#3d00b8"} board={[
+                                    [0,0,0,0,0,0,1,0],
+                                    [0,0,0,0,1,0,1,1],
+                                    [0,0,0,0,1,0,1,0],
+                                    [0,0,0,0,1,0,0,0],
+                                    [0,0,1,0,0,0,0,0],
+                                    [1,0,1,0,0,0,0,0]
                                 ]}></Brush>
                             </Col>
                         </Row>
