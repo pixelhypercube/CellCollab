@@ -12,7 +12,7 @@ export default class Brush extends React.Component {
                             {row.map((cell, j) => (
                             <td
                                 key={j}
-                                className={`brush-cell ${cell === 1 ? "alive" : "dead"}`}
+                                className={`brush-cell ${cell === 1 ? "alive" : "dead"} ${this.props.darkMode ? "dark" : ""}`}
                             ></td>
                             ))}
                         </tr>

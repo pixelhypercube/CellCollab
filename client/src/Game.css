@@ -1,7 +1,20 @@
+/* LIGHT MODE */
+main {
+  height:100%;
+}
+
 header {
   padding:2%;
   margin-bottom:20px;
   background:rgb(177, 177, 177);
+}
+
+#toggle-light-dark {
+  width:36px;
+  height:36px;
+  font-size:20px;
+  border:1px solid rgb(0, 0, 0);
+  border-radius:20px;
 }
 
 /* main container */
@@ -71,4 +84,73 @@ table.grid {
 
 .fade-out {
   animation: fadeOut 0.4s ease forwards;
+}
+
+/* link */
+a {
+  color:#495057;
+}
+
+/* DARK MODE */
+
+body.dark {
+  background-color: #111;
+  color:white;
+}
+
+header.dark {
+  padding: 2%;
+  margin-bottom: 20px;
+  background: rgb(40, 40, 40);
+}
+
+#toggle-light-dark.dark {
+  width:36px;
+  height:36px;
+  font-size:20px;
+  border:1px solid rgb(255, 255, 255);
+  border-radius:20px;
+}
+
+/* main container */
+#main-container.dark {
+  max-width: 500px;
+}
+
+/* table */
+.cell.dark {
+  border: 1px solid #555;
+}
+
+.alive.dark {
+  background-color: white;
+}
+
+.dead.dark {
+  background-color: black;
+}
+
+.hover.dark {
+  background-color: #cccccc33;
+}
+
+/* room title */
+#copy:hover.dark {
+  color: rgba(98, 155, 255, 0.7);
+}
+
+/* join room container */
+#join-room-container.dark {
+  background: rgb(60, 60, 60);
+}
+
+/* link */
+a.dark {
+  color:#949ca5;
+}
+
+/* button */
+.btn-primary.dark {
+  background:#052c65;
+  border-color:#052c65;
 }

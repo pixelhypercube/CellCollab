@@ -5,9 +5,7 @@ import {Button,Container,Form,Row,Col,Alert} from "react-bootstrap";
 import Brush from "./Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { FaChevronDown, FaChevronUp, FaCopy } from 'react-icons/fa';
-// import CryptoJS from "crypto-js";
-
+import { FaChevronDown, FaChevronUp, FaCopy, FaSun, FaMoon } from 'react-icons/fa';
 const MySwal = withReactContent(Swal);
 
 export class Game extends React.Component {
@@ -26,6 +24,7 @@ export class Game extends React.Component {
             hoverPosition: null,
             hoverRange: [],
             fadeOut:false,
+            darkMode:true,
         };
     }
 
@@ -63,12 +62,44 @@ export class Game extends React.Component {
                 hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0))
             });
         });
+
+        // dark mode detection
+        this.darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.setState({ darkMode: this.darkModeMediaQuery.matches });
+
+        this.darkModeChangeHandler = (e) => {
+            this.setState({ darkMode: e.matches });
+        };
+
+        this.darkModeMediaQuery.addEventListener('change', this.darkModeChangeHandler);
+
+        // set dark mode (for body only)
+
+        if (this.state.darkMode) {
+            document.body.classList.add("dark");
+        } else {
+            document.body.classList.remove("dark");
+        }
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.darkMode !== this.state.darkMode) {
+            if (this.state.darkMode) {
+                document.body.classList.add("dark");
+            } else {
+                document.body.classList.remove("dark");
+            }
+        }
     }
 
     componentWillUnmount() {
         socket.off("init");
         socket.off("update");
         socket.off("status");
+
+        if (this.darkModeMediaQuery && this.darkModeChangeHandler) {
+            this.darkModeMediaQuery.removeEventListener('change', this.darkModeChangeHandler);
+        }
     }
 
     // room and board functions
@@ -339,213 +370,235 @@ export class Game extends React.Component {
         }
     }
 
+    handleToggleDarkMode = () => {
+        this.setState((prevState) => ({ darkMode: !prevState.darkMode }));
+    }
+
     render() {
-    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined } = this.state;
+    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined, darkMode } = this.state;
 
     return (
         <div>
-            <header>
+            <header className={darkMode ? "dark" : ""}>
+                <div id="toggle-light-dark" onClick={this.handleToggleDarkMode}>{darkMode ? <FaMoon></FaMoon> : <FaSun></FaSun>}</div>
                 <h1>CellCollab</h1>
-                <h5>A Multiplayer Sandbox Implementation of <a style={{color:"#495057"}} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
-                <a style={{color:"#495057"}} href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
+                <h5>A Multiplayer Sandbox Implementation of <a  className={darkMode ? "dark" : ""} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
+                <a className={darkMode ? "dark" : ""} href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
-            {!isJoined ? (
-            <div className={`additional-settings-wrapper ${this.state.additionalOptionsEnabled ? 'open' : 'closed'}`}>
-                <Container id="join-room-container">
-                    <h4><u>Join/Create a Room</u></h4>
-                    <Form>
-                        <Form.Group controlId="formRoomId">
-                        <Form.Label style={{textAlign:"left"}} className="w-100">Room ID (Leave blank to create a new room):</Form.Label>
-                            <Form.Control
-                            type="text"
-                            value={roomId}
-                            onChange={this.handleRoomChange}
-                            placeholder="Room ID"
-                            />
-                        </Form.Group>
-                        <br></br>
-                        <Form.Group style={{borderBottom:"1px solid grey",marginBottom:"5px"}} controlId="formEnableAdditionalSettings">
-                            <div 
-                                style={{ display: 'flex', justifyContent:"space-between", alignItems: 'center', cursor: 'pointer' }}
-                                onClick={this.handleAdditionalSettings}
-                                >
-                                <h5 style={{ marginRight: '8px' }}>Additional Settings</h5>
-                                {additionalOptionsEnabled ? <FaChevronUp /> : <FaChevronDown />}
-                            </div>
-                        </Form.Group>
-                        {
-                            additionalOptionsEnabled ? 
-                            <div className={this.state.fadeOut ? 'fade-out' : 'fade-in'}>
-                                <Alert variant="danger" style={{textAlign:"left"}}><strong>WARNING:</strong> Changing the size of an existing board may alter its layout and content. Please proceed with caution to avoid unintended changes.</Alert>
-                                <Row id="additional-options">
-                                    <Col>
-                                        <Form.Group controlId="formBoardWidth">
-                                            <Form.Label style={{textAlign:"left"}} className="w-100">Board Width (cells)</Form.Label>
-                                            <Form.Control
-                                            type="number"
-                                            value={boardWidth}
-                                            onChange={this.handleWidthChange}
-                                            // min="10"
-                                            // max="50"
-                                            />
-                                        </Form.Group>
-                                    </Col>
-                                    <Col>
-                                        <Form.Group controlId="formBoardHeight">
-                                            <Form.Label style={{textAlign:"left"}} className="w-100">Board Height (cells)</Form.Label>
-                                            <Form.Control
-                                            type="number"
-                                            value={boardHeight}
-                                            onChange={this.handleHeightChange}
-                                            // min="10"
-                                            // max="50"
-                                            />
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-                            </div> : <></>
-                        }
-                        <br></br>
-                        <Button variant="primary" onClick={this.handleJoinRoom}>
-                            Join/Create Room
-                        </Button>
-                    </Form>
-                </Container>
-            </div>
-            ) : (
-            <div>
-                <h1>
-                    Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
-                </h1>
-                <table className="grid">
-                    <tbody>
-                        {board.map((row, i) => (
-                        <tr key={i}>
-                            {row.map((cell, j) => (
-                            <td
-                                key={j}
-                                className={`cell ${cell === 1 ? "alive" : "dead"} 
-                                    ${this.state.hoverPosition!==null 
-                                        && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
-                                }`}
-                                onClick={() => this.handleCellClick(i, j)}
-                                onMouseOver={() => this.handleMouseOver(i, j)}
-                                onMouseLeave={() => this.setState({ hoverPosition: null })}
-                            ></td>
+            <main>
+                {!isJoined ? (
+                <div className={`additional-settings-wrapper ${this.state.additionalOptionsEnabled ? 'open' : 'closed'}`}>
+                    <Container className={darkMode ? "dark" : ""} id="join-room-container">
+                        <h4><u>Join/Create a Room</u></h4>
+                        <Form>
+                            <Form.Group controlId="formRoomId">
+                            <Form.Label style={{textAlign:"left"}} className="w-100">Room ID (Leave blank to create a new room):</Form.Label>
+                                <Form.Control
+                                type="text"
+                                value={roomId}
+                                onChange={this.handleRoomChange}
+                                placeholder="Room ID"
+                                />
+                            </Form.Group>
+                            <br></br>
+                            <Form.Group style={{borderBottom:"1px solid grey",marginBottom:"5px"}} controlId="formEnableAdditionalSettings">
+                                <div 
+                                    style={{ display: 'flex', justifyContent:"space-between", alignItems: 'center', cursor: 'pointer' }}
+                                    onClick={this.handleAdditionalSettings}
+                                    >
+                                    <h5 style={{ marginRight: '8px' }}>Additional Settings</h5>
+                                    {additionalOptionsEnabled ? <FaChevronUp /> : <FaChevronDown />}
+                                </div>
+                            </Form.Group>
+                            {
+                                additionalOptionsEnabled ? 
+                                <div className={this.state.fadeOut ? 'fade-out' : 'fade-in'}>
+                                    <Alert variant="danger" style={{textAlign:"left"}}><strong>WARNING:</strong> Changing the size of an existing board may alter its layout and content. Please proceed with caution to avoid unintended changes.</Alert>
+                                    <Row id="additional-options">
+                                        <Col>
+                                            <Form.Group controlId="formBoardWidth">
+                                                <Form.Label style={{textAlign:"left"}} className="w-100">Board Width (cells)</Form.Label>
+                                                <Form.Control
+                                                type="number"
+                                                value={boardWidth}
+                                                onChange={this.handleWidthChange}
+                                                // min="10"
+                                                // max="50"
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col>
+                                            <Form.Group controlId="formBoardHeight">
+                                                <Form.Label style={{textAlign:"left"}} className="w-100">Board Height (cells)</Form.Label>
+                                                <Form.Control
+                                                type="number"
+                                                value={boardHeight}
+                                                onChange={this.handleHeightChange}
+                                                // min="10"
+                                                // max="50"
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                    </Row>
+                                </div> : <></>
+                            }
+                            <br></br>
+                            <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleJoinRoom}>
+                                Join/Create Room
+                            </Button>
+                        </Form>
+                    </Container>
+                </div>
+                ) : (
+                <div>
+                    <h1>
+                        Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
+                    </h1>
+                    <table className={"grid"}>
+                        <tbody>
+                            {board.map((row, i) => (
+                            <tr key={i}>
+                                {row.map((cell, j) => (
+                                <td
+                                    key={j}
+                                    className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
+                                        ${this.state.hoverPosition!==null 
+                                            && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
+                                    }`}
+                                    onClick={() => this.handleCellClick(i, j)}
+                                    onMouseOver={() => this.handleMouseOver(i, j)}
+                                    onMouseLeave={() => this.setState({ hoverPosition: null })}
+                                ></td>
+                                ))}
+                            </tr>
                             ))}
-                        </tr>
-                        ))}
-                    </tbody>
-                </table>
-                <br></br>
-                <Container className="d-flex" id="main-container">
-                    <Button variant="primary" onClick={this.handleToggleRun}>
-                        {isRunning ? "Pause" : "Play"}
-                    </Button>
-                    <Button variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
-                        Step
-                    </Button>
-                    <Button variant="primary" onClick={this.handleReset}>
-                        Reset
-                    </Button>
-                </Container>
-                <br></br>
-                <Container>
-                    <h4><u>Palette</u></h4>
-                    <h5>Defaults</h5>
-                    <Row>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Default",currentBrushBoard:[[1]]});
-                            }} selected={this.state.currentBrush==="Default"} title="1x1 Block" color="#ccffcc" borderColor="#00b800" board={[[0,0,0],[0,1,0],[0,0,0]]}></Brush>
-                        </Col>
-                    </Row>
-                    <h5>Still Lifes</h5>
-                    <Row>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1],[1,1]]});
-                            }} selected={this.state.currentBrush==="2x2"} title="2x2 Block" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Bee Hive",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,1,0]]});
-                            }} selected={this.state.currentBrush==="Bee Hive"} title="Bee Hive" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,1,0,0],[0,0,0,0,0,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Loaf",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,0,1],[0,0,1,0]]});
-                            }}  selected={this.state.currentBrush==="Loaf"} title="Loaf" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,0,1,0],[0,0,0,1,0,0],[0,0,0,0,0,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Boat",currentBrushBoard:[[1,1,0],[1,0,1],[0,1,0]]});
-                            }} selected={this.state.currentBrush==="Boat"} title="Boat" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0],[0,1,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Tub",currentBrushBoard:[[0,1,0],[1,0,1],[0,1,0]]});
-                            }} selected={this.state.currentBrush==="Tub"} title="Tub" color="#ffffcc" borderColor="#b8b800" board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
-                        </Col>
-                    </Row>
-                    <h5>Oscillators</h5>
-                    <Row>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Blinker", currentBrushBoard:[[0,1,0],[0,1,0],[0,1,0]]});
-                            }} selected={this.state.currentBrush==="Blinker"} title="Blinker (period 2)" color="#ffdecc" borderColor="#b84100" board={[[0,1,0],[0,1,0],[0,1,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Toad", currentBrushBoard:[[0,0,1,1,1,0],[0,1,1,1,0,0]]});
-                            }} selected={this.state.currentBrush==="Toad"} title="Toad (period 2)" color="#ffdecc" borderColor="#b84100" board={[[0,0,1,1,1,0],[0,1,1,1,0,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Beacon", currentBrushBoard:[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]});
-                            }} selected={this.state.currentBrush==="Beacon"} title="Beacon (period 2)" color="#ffdecc" borderColor="#b84100" board={[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Pulsar", 
-                                    currentBrushBoard:[
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                        [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                        </tbody>
+                    </table>
+                    <br></br>
+                    <Container className="d-flex" id="main-container">
+                        <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleToggleRun}>
+                            {isRunning ? "Pause" : "Play"}
+                        </Button>
+                        <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
+                            Step
+                        </Button>
+                        <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleReset}>
+                            Reset
+                        </Button>
+                    </Container>
+                    <br></br>
+                    <Container>
+                        <h4><u>Palette</u></h4>
+                        <h5>Defaults</h5>
+                        <Row>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Default",currentBrushBoard:[[1]]});
+                                }} selected={this.state.currentBrush==="Default"} darkMode={darkMode} title="1x1 Block" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0],[0,1,0],[0,0,0]]}></Brush>
+                            </Col>
+                        </Row>
+                        <h5>Still Lifes</h5>
+                        <Row>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1],[1,1]]});
+                                }} selected={this.state.currentBrush==="2x2"} darkMode={darkMode} title="2x2 Block" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Bee Hive",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,1,0]]});
+                                }} selected={this.state.currentBrush==="Bee Hive"} darkMode={darkMode} title="Bee Hive" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Loaf",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,0,1],[0,0,1,0]]});
+                                }}  selected={this.state.currentBrush==="Loaf"} darkMode={darkMode} title="Loaf" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,0,1,0],[0,0,0,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Boat",currentBrushBoard:[[1,1,0],[1,0,1],[0,1,0]]});
+                                }} selected={this.state.currentBrush==="Boat"} darkMode={darkMode} title="Boat" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0],[0,1,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Tub",currentBrushBoard:[[0,1,0],[1,0,1],[0,1,0]]});
+                                }} selected={this.state.currentBrush==="Tub"} darkMode={darkMode} title="Tub" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                            </Col>
+                        </Row>
+                        <h5>Oscillators</h5>
+                        <Row>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Blinker", currentBrushBoard:[[0,1,0],[0,1,0],[0,1,0]]});
+                                }} selected={this.state.currentBrush==="Blinker"} darkMode={darkMode} title="Blinker (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[0,1,0],[0,1,0],[0,1,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Toad", currentBrushBoard:[[0,0,1,1,1,0],[0,1,1,1,0,0]]});
+                                }} selected={this.state.currentBrush==="Toad"} darkMode={darkMode} title="Toad (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[0,0,1,1,1,0],[0,1,1,1,0,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Beacon", currentBrushBoard:[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]});
+                                }} selected={this.state.currentBrush==="Beacon"} darkMode={darkMode} title="Beacon (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Pulsar", 
+                                        currentBrushBoard:[
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                            [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                            [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                            [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                            [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                            [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                            [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                        ]});
+                                }} selected={this.state.currentBrush==="Pulsar"} darkMode={darkMode} title="Pulsar (period 3)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                ]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Penta Decathlon", currentBrushBoard:[
+                                        [0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,1,1,1,0,0,0],
+                                        [0,0,1,0,0,0,1,0,0],
+                                        [0,0,1,0,0,0,1,0,0],
+                                        [0,0,0,1,1,1,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0],
+                                        [0,0,0,1,1,1,0,0,0],
+                                        [0,0,1,0,0,0,1,0,0],
+                                        [0,0,1,0,0,0,1,0,0],
+                                        [0,0,0,1,1,1,0,0,0],
+                                        [0,0,0,0,0,0,0,0,0],
                                     ]});
-                            }} selected={this.state.currentBrush==="Pulsar"} title="Pulsar (period 3)" color="#ffdecc" borderColor="#b84100" board={[
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                            ]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"Penta Decathlon", currentBrushBoard:[
+                                }} selected={this.state.currentBrush==="Penta Decathlon"} darkMode={darkMode} title="Penta Decathlon (period 15)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[
                                     [0,0,0,0,0,0,0,0,0],
                                     [0,0,0,1,1,1,0,0,0],
                                     [0,0,1,0,0,0,1,0,0],
@@ -560,84 +613,69 @@ export class Game extends React.Component {
                                     [0,0,1,0,0,0,1,0,0],
                                     [0,0,0,1,1,1,0,0,0],
                                     [0,0,0,0,0,0,0,0,0],
-                                ]});
-                            }} selected={this.state.currentBrush==="Penta Decathlon"} title="Penta Decathlon (period 15)" color="#ffdecc" borderColor="#b84100" board={[
-                                [0,0,0,0,0,0,0,0,0],
-                                [0,0,0,1,1,1,0,0,0],
-                                [0,0,1,0,0,0,1,0,0],
-                                [0,0,1,0,0,0,1,0,0],
-                                [0,0,0,1,1,1,0,0,0],
-                                [0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0],
-                                [0,0,0,1,1,1,0,0,0],
-                                [0,0,1,0,0,0,1,0,0],
-                                [0,0,1,0,0,0,1,0,0],
-                                [0,0,0,1,1,1,0,0,0],
-                                [0,0,0,0,0,0,0,0,0],
-                            ]}></Brush>
-                        </Col>
-                    </Row>
-                    <h5>Spaceships</h5>
-                    <Row>
-                        <Col>
+                                ]}></Brush>
+                            </Col>
+                        </Row>
+                        <h5>Spaceships</h5>
+                        <Row>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"Glider",currentBrushBoard:[[0,1,0],[0,0,1],[1,1,1]]});
+                                }} selected={this.state.currentBrush==="Glider"} darkMode={darkMode} title="Glider" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,0],[0,0,1],[1,1,1]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"LWSS",currentBrushBoard:[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]});
+                                }} selected={this.state.currentBrush==="LWSS"} darkMode={darkMode} title="Light-weight Spaceship (LWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"MWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
+                                }} selected={this.state.currentBrush==="MWSS"} darkMode={darkMode} title="Middle-weight Spaceship (MWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                            </Col>
+                            <Col>
+                                <Brush onClick={()=>{
+                                    this.setState({currentBrush:"HWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
+                                }} selected={this.state.currentBrush==="HWSS"} darkMode={darkMode} title="Heavy-weight Spaceship (HWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                            </Col>
+                        </Row>
+                        <h5>Guns</h5>
+                        <Row>
+                            <Col>
                             <Brush onClick={()=>{
-                                this.setState({currentBrush:"Glider",currentBrushBoard:[[0,1,0],[0,0,1],[1,1,1]]});
-                            }} selected={this.state.currentBrush==="Glider"} title="Glider" color="#ccdeff" borderColor="#0041b8" board={[[0,1,0],[0,0,1],[1,1,1]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"LWSS",currentBrushBoard:[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]});
-                            }} selected={this.state.currentBrush==="LWSS"} title="Light-weight Spaceship (LWSS)" color="#ccdeff" borderColor="#0041b8" board={[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"MWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
-                            }} selected={this.state.currentBrush==="MWSS"} title="Middle-weight Spaceship (MWSS)" color="#ccdeff" borderColor="#0041b8" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
-                        </Col>
-                        <Col>
-                            <Brush onClick={()=>{
-                                this.setState({currentBrush:"HWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
-                            }} selected={this.state.currentBrush==="HWSS"} title="Heavy-weight Spaceship (HWSS)" color="#ccdeff" borderColor="#0041b8" board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
-                        </Col>
-                    </Row>
-                    <h5>Guns</h5>
-                    <Row>
-                        <Col>
-                        <Brush onClick={()=>{
-                                this.setState({currentBrush:"Gosper Glider Gun", 
-                                    currentBrushBoard:[
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
-                                        [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-                                    ]});
-                            }} selected={this.state.currentBrush==="Gosper Glider Gun"} title="Gosper Glider Gun" color="#ddccff" borderColor="#3d00b8" board={[
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
-                                [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-                            ]}></Brush>
-                        </Col>
-                    </Row>
-                </Container>
-            </div>
-            )}
+                                    this.setState({currentBrush:"Gosper Glider Gun", 
+                                        currentBrushBoard:[
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                            [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                                        ]});
+                                }} selected={this.state.currentBrush==="Gosper Glider Gun"} darkMode={darkMode} title="Gosper Glider Gun" color={darkMode ? "#110033" : "#ddccff"} borderColor={darkMode ? "#8547ff" : "#3d00b8"} board={[
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                    [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                                ]}></Brush>
+                            </Col>
+                        </Row>
+                    </Container>
+                </div>
+                )}
+            </main>
         </div>
     );
   }
