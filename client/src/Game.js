@@ -23,7 +23,7 @@ export class Game extends React.Component {
             currentBrush:"Default", // brush
             currentBrushBoard:[[1]],
             hoverPosition: null,
-            hoverRange: Array.from({length:25}, () => Array(25).fill(0)),
+            hoverRange: [],
             fadeOut:false,
         };
     }
@@ -93,7 +93,9 @@ export class Game extends React.Component {
             if (this.state.additionalOptionsEnabled) {
                 if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
                     socket.emit("joinRoomWithSettings", roomId, boardWidth, boardHeight);
-                    this.setState({ isJoined: true });
+                    this.setState({ isJoined: true, 
+                        hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0))
+                    });
                 } else {
                     if (this.isInvalidSize(boardWidth)) {
                         MySwal.fire({
@@ -139,7 +141,12 @@ export class Game extends React.Component {
                 }
             } else {
                 socket.emit("joinRoom", roomId);
-                this.setState({ isJoined: true, boardWidth: 35, boardHeight: 25 }); // put default values
+                this.setState({ 
+                    isJoined: true, 
+                    boardWidth: 35, 
+                    boardHeight: 25, 
+                    hoverRange: Array.from({ length: 35 }, () => Array(25).fill(0))
+                }); // put default values
             }
         } else {
             MySwal.fire({
