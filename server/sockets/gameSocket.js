@@ -28,20 +28,28 @@ module.exports = function(io) {
                         intervalId: null
                     };
                 }
+                let board = rooms[roomId].board;
+                const boardHeight = board.length;
+                const boardWidth = board[0].length;
                 socket.join(roomId);
                 socket.emit("roomExists",roomId,true);
                 socket.emit("init", rooms[roomId].board);
                 socket.emit("status", rooms[roomId].isRunning);
                 socket.emit("hashedRoomId", roomId);
+                socket.emit("boardDims",boardHeight,boardWidth);
             }
             else {
                 if (!rooms[roomId]) socket.emit("roomExists",roomId,false);
                 else {
+                    let board = rooms[roomId].board;
+                    const boardHeight = board.length;
+                    const boardWidth = board[0].length;
                     socket.join(roomId);
                     socket.emit("roomExists",roomId,true);
                     socket.emit("init", rooms[roomId].board);
                     socket.emit("status", rooms[roomId].isRunning);
                     socket.emit("hashedRoomId", roomId);
+                    socket.emit("boardDims",boardHeight,boardWidth);
                 }
             }
         });
@@ -55,11 +63,15 @@ module.exports = function(io) {
                         isRunning: false,
                         intervalId: null
                     };
+                    let board = rooms[roomId].board;
+                    const boardHeight = board.length;
+                    const boardWidth = board[0].length;
                     socket.join(roomId);
                     socket.emit("roomExists",roomId,true);
                     socket.emit("init", rooms[roomId].board);
                     socket.emit("status", rooms[roomId].isRunning);
                     socket.emit("hashedRoomId", roomId);
+                    socket.emit("boardDims",boardHeight,boardWidth);
                 } else {
                     if (rooms[roomId].board) {
                         // check whether to resize board or not
@@ -75,6 +87,7 @@ module.exports = function(io) {
                         socket.emit("init", rooms[roomId].board);
                         socket.emit("status", rooms[roomId].isRunning);
                         socket.emit("hashedRoomId", roomId);
+                        socket.emit("boardDims",height,width);
                     }
                 }
             }
@@ -96,13 +109,8 @@ module.exports = function(io) {
                         socket.emit("init", rooms[roomId].board);
                         socket.emit("status", rooms[roomId].isRunning);
                         socket.emit("hashedRoomId", roomId);
+                        socket.emit("boardDims",height,width);
                     }
-
-                    socket.join(roomId);
-                    socket.emit("roomExists",roomId,true);
-                    socket.emit("init", rooms[roomId].board);
-                    socket.emit("status", rooms[roomId].isRunning);
-                    socket.emit("hashedRoomId", roomId);
                 }
             } 
         });

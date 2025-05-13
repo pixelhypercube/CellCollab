@@ -55,6 +55,14 @@ export class Game extends React.Component {
                 });
             }
         });
+
+        socket.on("boardDims",(boardHeight,boardWidth) => {
+            this.setState({
+                boardWidth,
+                boardHeight,
+                hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0))
+            });
+        });
     }
 
     componentWillUnmount() {
