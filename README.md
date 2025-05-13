@@ -115,11 +115,13 @@ npm install
 
 #### Start the backend server:
 ```
+cd server
 node server.js
 ```
 
 #### Start the frontend:
 ```
+cd client
 npm start
 ```
 
