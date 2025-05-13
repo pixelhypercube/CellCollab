@@ -2,6 +2,7 @@
   "dependencies": {
     "crypto": "^1.0.1",
     "heroku": "^8.7.1",
+    "react-copy-to-clipboard": "^5.1.0",
     "socket.io-client": "^4.8.1"
   },
   "name": "cellcollab",

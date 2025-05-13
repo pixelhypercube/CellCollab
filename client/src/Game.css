@@ -37,6 +37,12 @@ table.grid {
   background-color: #96969633;
 }
 
+/* room title */
+
+#copy:hover {
+  color:rgba(2, 53, 129, 0.503);
+}
+
 /* join room container */
 
 #join-room-container {

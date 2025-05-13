@@ -5,7 +5,7 @@ import {Button,Container,Form,Row,Col,Alert} from "react-bootstrap";
 import Brush from "./Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp, FaCopy } from 'react-icons/fa';
 // import CryptoJS from "crypto-js";
 
 const MySwal = withReactContent(Swal);
@@ -317,6 +317,28 @@ export class Game extends React.Component {
         this.setState({currentBrush,currentBrushBoard});
     }
 
+    handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(this.state.roomId);
+            Swal.fire({
+                toast: true,
+                icon: "success",
+                title: "Copied to clipboard!",
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 1500
+            });
+        } catch (err) {
+            Swal.fire({
+                icon: "error",
+                title: "Copy failed",
+                toast: true,
+                position:"top-end",
+                text: err.message
+            });
+        }
+    }
+
     render() {
     const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined } = this.state;
 
@@ -392,7 +414,9 @@ export class Game extends React.Component {
             </div>
             ) : (
             <div>
-                <h1>Room <span id="copy">{roomId}</span></h1>
+                <h1>
+                    Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
+                </h1>
                 <table className="grid">
                     <tbody>
                         {board.map((row, i) => (
