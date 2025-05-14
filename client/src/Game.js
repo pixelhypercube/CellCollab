@@ -25,7 +25,21 @@ export class Game extends React.Component {
             hoverRange: [],
             fadeOut:false,
             darkMode:true,
+            speed:100,
+            iterations:0,
+
+            // transform keys
+            scale:1,
+            offsetX:0,
+            offsetY:0,
+            mouseX:0,
+            mouseY:0,
+            isDragging:false,
+            lastMouseX:0,
+            lastMouseY:0
         };
+
+        this.tableRef = React.createRef();
     }
 
     componentDidMount() {
@@ -63,6 +77,10 @@ export class Game extends React.Component {
             });
         });
 
+        socket.on("iterations",(iterations)=>{
+            this.setState({iterations});
+        });
+
         // dark mode detection
         this.darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         this.setState({ darkMode: this.darkModeMediaQuery.matches });
@@ -80,6 +98,13 @@ export class Game extends React.Component {
         } else {
             document.body.classList.remove("dark");
         }
+
+        // table scroll and move functions
+        window.addEventListener('wheel', this.handleScroll, { passive: false });
+        
+        window.addEventListener('mousemove', this.handleMouseMove);
+        window.addEventListener('mouseup', this.handleMouseUp);
+        window.addEventListener('mousedown', this.handleMouseDown);
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -100,6 +125,13 @@ export class Game extends React.Component {
         if (this.darkModeMediaQuery && this.darkModeChangeHandler) {
             this.darkModeMediaQuery.removeEventListener('change', this.darkModeChangeHandler);
         }
+
+        if (this.tableRef.current)
+            window.removeEventListener('wheel', this.handleScroll);
+        
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('mouseup', this.handleMouseUp);
+        window.removeEventListener('mousedown', this.handleMouseDown);
     }
 
     // room and board functions
@@ -262,26 +294,6 @@ export class Game extends React.Component {
                     hoverRange: Array.from({ length: 35 }, () => Array(25).fill(0))
                 });
             }
-
-            // no need the alert anymore
-            // MySwal.fire({
-            //     toast:true,
-            //     title:"Please enter a Room ID!",
-            //     timer: 2000,
-            //     timerProgressBar: true,
-            //     icon:"warning",
-            //     didOpen:() => {
-            //         const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
-            //         if (popup) {
-            //             popup.style.width = '250px';
-            //             popup.style.fontSize = '14px';
-            //             popup.style.padding = "10px";
-            //             popup.style.top = "-75px";
-            //         }
-            //         const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
-            //         if (popupTitle) popupTitle.style.margin = "0px 1em";
-            //     }
-            // });
         }
     };
 
@@ -298,6 +310,11 @@ export class Game extends React.Component {
     handleReset = () => {
         socket.emit("reset",this.state.roomId);
     };
+
+    handleToggleSpeed = (e) => {
+        this.setState({speed:e.target.value});
+        socket.emit("speed",this.state.roomId,e.target.value);
+    }
 
     handleCellClick = (i, j) => {
         let currentBrushBoard = this.state.currentBrushBoard;
@@ -374,15 +391,79 @@ export class Game extends React.Component {
         this.setState((prevState) => ({ darkMode: !prevState.darkMode }));
     }
 
+
+    handleScroll = (e) => {
+        e.preventDefault();
+        const delta = -e.deltaY;
+
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        this.setState((prevState) => {
+            let newScale = (prevState.scale ?? 1) + delta * 0.001;
+            newScale = Math.min(Math.max(newScale, 0.2), 3); // clamp between 0.2 and 3
+            
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            const offsetX = (mouseX - centerX) * (1 - newScale);
+            const offsetY = (mouseY - centerY) * (1 - newScale);
+
+            return {
+                scale: newScale,
+                offsetX,
+                offsetY
+            };
+        });
+    }
+
+    handleDrag = (e) => {
+        e.preventDefault();
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        this.setState({mouseX,mouseY});
+    }
+
+    handleMouseMove = (e) => {
+        if (this.state.isDragging) {
+            const { lastMouseX, lastMouseY } = this.state;
+
+            const deltaX = e.clientX - lastMouseX;
+            const deltaY = e.clientY - lastMouseY;
+
+            this.setState((prevState) => ({
+                offsetX: prevState.offsetX + deltaX,
+                offsetY: prevState.offsetY + deltaY,
+                lastMouseX: e.clientX,
+                lastMouseY: e.clientY,
+            }));
+        }
+
+        this.setState({ mouseX: e.clientX, mouseY: e.clientY });
+    }
+
+    handleMouseDown = (e) => {
+        e.preventDefault();
+        this.setState({
+            isDragging: true,
+            lastMouseX: e.clientX,
+            lastMouseY: e.clientY,
+        });
+    };
+
+    handleMouseUp = () => {
+        this.setState({ isDragging: false });
+    };
+
     render() {
-    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined, darkMode } = this.state;
+    const { additionalOptionsEnabled, board, isRunning, roomId, iterations, boardWidth, boardHeight, isJoined, darkMode, scale } = this.state;
 
     return (
         <div>
             <header className={darkMode ? "dark" : ""}>
                 <div id="toggle-light-dark" onClick={this.handleToggleDarkMode}>{darkMode ? <FaMoon></FaMoon> : <FaSun></FaSun>}</div>
                 <h1>CellCollab</h1>
-                <h5>A Multiplayer Sandbox Implementation of <a  className={darkMode ? "dark" : ""} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
+                <h5>A Multiplayer Sandbox Implementation of <a className={darkMode ? "dark" : ""} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
                 <a className={darkMode ? "dark" : ""} href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
             <main>
@@ -422,8 +503,6 @@ export class Game extends React.Component {
                                                 type="number"
                                                 value={boardWidth}
                                                 onChange={this.handleWidthChange}
-                                                // min="10"
-                                                // max="50"
                                                 />
                                             </Form.Group>
                                         </Col>
@@ -434,8 +513,6 @@ export class Game extends React.Component {
                                                 type="number"
                                                 value={boardHeight}
                                                 onChange={this.handleHeightChange}
-                                                // min="10"
-                                                // max="50"
                                                 />
                                             </Form.Group>
                                         </Col>
@@ -454,27 +531,41 @@ export class Game extends React.Component {
                     <h1>
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
-                    <table className={"grid"}>
-                        <tbody>
-                            {board.map((row, i) => (
-                            <tr key={i}>
-                                {row.map((cell, j) => (
-                                <td
-                                    key={j}
-                                    className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
-                                        ${this.state.hoverPosition!==null 
-                                            && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
-                                    }`}
-                                    onClick={() => this.handleCellClick(i, j)}
-                                    onMouseOver={() => this.handleMouseOver(i, j)}
-                                    onMouseLeave={() => this.setState({ hoverPosition: null })}
-                                ></td>
+                    <Container className={darkMode ? "dark" : ""} id="oflow-container">
+                        <table ref={this.tableRef} onMouseMove={this.handleMouseOverTable} style={{transform:`scale(${scale}) translate(${this.state.offsetX / this.state.scale}px, ${this.state.offsetY / this.state.scale}px)`}} className={"grid"}>
+                            <tbody>
+                                {board.map((row, i) => (
+                                <tr key={i}>
+                                    {row.map((cell, j) => (
+                                    <td
+                                        key={j}
+                                        className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
+                                            ${this.state.hoverPosition!==null 
+                                                && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
+                                        }`}
+                                        onClick={() => this.handleCellClick(i, j)}
+                                        onMouseOver={() => this.handleMouseOver(i, j)}
+                                        onMouseLeave={() => this.setState({ hoverPosition: null })}
+                                    ></td>
+                                    ))}
+                                </tr>
                                 ))}
-                            </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </Container>
                     <br></br>
+                    {/* <Container className="d-flex">
+                        <Row>
+                            <Col>
+                                
+                            </Col>
+                            <Col>
+                                <Button></Button>
+                                <Button></Button>
+                            </Col>
+                        </Row>
+                    </Container> */}
+                    <p>Iterations: <strong>{iterations}</strong></p>
                     <Container className="d-flex" id="main-container">
                         <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleToggleRun}>
                             {isRunning ? "Pause" : "Play"}
@@ -485,6 +576,11 @@ export class Game extends React.Component {
                         <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleReset}>
                             Reset
                         </Button>
+                    </Container>
+                    <br></br>
+                    <Container style={{width:"50%"}}>
+                        <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
+                        <Form.Range min={25} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
                     </Container>
                     <br></br>
                     <Container>
