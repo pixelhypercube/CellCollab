@@ -36,10 +36,14 @@ export class Game extends React.Component {
             mouseY:0,
             isDragging:false,
             lastMouseX:0,
-            lastMouseY:0
+            lastMouseY:0,
+
+            pinchMidPoint:0,
+            initialDistance:1,
         };
 
         this.tableRef = React.createRef();
+        this.containerRef = React.createRef();
     }
 
     componentDidMount() {
@@ -391,6 +395,34 @@ export class Game extends React.Component {
         this.setState((prevState) => ({ darkMode: !prevState.darkMode }));
     }
 
+    // CLAMPING
+
+    getClampedOffsets = (offsetX, offsetY, scale) => {
+        const container = this.containerRef.current;
+        const table = this.tableRef.current;
+
+        if (!container || !table) return { offsetX, offsetY };
+
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        const tableWidth = table.offsetWidth * scale;
+        const tableHeight = table.offsetHeight * scale;
+
+        const minOffsetX = Math.min(0, containerWidth - tableWidth);
+        const minOffsetY = Math.min(0, containerHeight - tableHeight);
+        const maxOffsetX = 0;
+        const maxOffsetY = 0;
+
+        return {
+            offsetX: this.clamp(offsetX, minOffsetX, maxOffsetX),
+            offsetY: this.clamp(offsetY, minOffsetY, maxOffsetY)
+        };
+    };
+
+    clamp = (value, min, max) => {
+        return Math.max(min, Math.min(value, max));
+    };
+
 
     handleScroll = (e) => {
         e.preventDefault();
@@ -407,11 +439,12 @@ export class Game extends React.Component {
 
             const offsetX = (mouseX - centerX) * (1 - newScale);
             const offsetY = (mouseY - centerY) * (1 - newScale);
-
+            
+            const clamped = this.getClampedOffsets(offsetX, offsetY, newScale);
             return {
                 scale: newScale,
-                offsetX,
-                offsetY
+                offsetX: clamped.offsetX,
+                offsetY: clamped.offsetY
             };
         });
     }
@@ -431,12 +464,18 @@ export class Game extends React.Component {
             const deltaX = e.clientX - lastMouseX;
             const deltaY = e.clientY - lastMouseY;
 
-            this.setState((prevState) => ({
-                offsetX: prevState.offsetX + deltaX,
-                offsetY: prevState.offsetY + deltaY,
-                lastMouseX: e.clientX,
-                lastMouseY: e.clientY,
-            }));
+            this.setState((prevState) => {
+                const newOffsetX = prevState.offsetX + deltaX;
+                const newOffsetY = prevState.offsetY + deltaY;
+                const clamped = this.getClampedOffsets(newOffsetX, newOffsetY, prevState.scale);
+
+                return {
+                    offsetX: clamped.offsetX,
+                    offsetY: clamped.offsetY,
+                    lastMouseX: e.clientX,
+                    lastMouseY: e.clientY,
+                }
+            });
         }
 
         this.setState({ mouseX: e.clientX, mouseY: e.clientY });
@@ -449,6 +488,97 @@ export class Game extends React.Component {
             lastMouseX: e.clientX,
             lastMouseY: e.clientY,
         });
+    };
+
+    getDistance = (touch1, touch2) => {
+        const dx = touch1.pageX - touch2.pageX;
+        const dy = touch1.pageY - touch2.pageY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    handleTouchStart = (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            this.setState({
+                lastTouchX: touch.pageX,
+                lastTouchY: touch.pageY,
+            });
+        } else if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const dist = this.getDistance(touch1, touch2);
+            const midX = (touch1.pageX + touch2.pageX) / 2;
+            const midY = (touch1.pageY + touch2.pageY) / 2;
+
+            this.setState({
+                initialDistance: dist,
+                initialScale: this.state.scale,
+                pinchMidpoint: { x: midX, y: midY },
+            });
+        }
+    };
+
+    handleTouchMove = (e) => {
+        e.preventDefault();
+
+        if (e.touches.length === 1) {
+            // Dragging
+            const touch = e.touches[0];
+            const deltaX = touch.pageX - this.state.lastTouchX;
+            const deltaY = touch.pageY - this.state.lastTouchY;
+
+            this.setState((prevState) => ({
+                offsetX: prevState.offsetX + deltaX,
+                offsetY: prevState.offsetY + deltaY,
+                lastTouchX: touch.pageX,
+                lastTouchY: touch.pageY,
+            }));
+        } else if (e.touches.length === 2) {
+            // Scaling
+            const newDistance = this.getDistance(e.touches[0], e.touches[1]);
+            const { initialDistance, initialScale, pinchMidpoint, offsetX, offsetY } = this.state;
+
+            if (initialDistance && initialScale && pinchMidpoint) {
+                const scaleFactor = newDistance / initialDistance;
+                const newScale = initialScale * scaleFactor;
+                
+                const dx = pinchMidpoint.x;
+                const dy = pinchMidpoint.y;
+
+                const newOffsetX = dx - (dx - offsetX) * (newScale / this.state.scale);
+                const newOffsetY = dy - (dy - offsetY) * (newScale / this.state.scale);
+
+                const clamped = this.getClampedOffsets(newOffsetX, newOffsetY, newScale);
+                
+                this.setState({
+                    scale: newScale,
+                    offsetX: clamped.offsetX,
+                    offsetY: clamped.offsetY,
+                });
+            }
+        }
+    };
+
+    handleTouchEnd = (e) => {
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            this.setState({
+                lastTouchX: touch.pageX,
+                lastTouchY: touch.pageY,
+                initialDistance: null,
+                initialScale: null,
+                pinchMidpoint: null,
+            });
+        } else if (e.touches.length === 0) {
+            this.setState({
+                lastTouchX: null,
+                lastTouchY: null,
+                initialDistance: null,
+                initialScale: null,
+                pinchMidpoint: null,
+            });
+        }
     };
 
     handleMouseUp = () => {
@@ -531,8 +661,8 @@ export class Game extends React.Component {
                     <h1>
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
-                    <Container className={darkMode ? "dark" : ""} id="oflow-container">
-                        <table ref={this.tableRef} onMouseMove={this.handleMouseOverTable} style={{transform:`scale(${scale}) translate(${this.state.offsetX / this.state.scale}px, ${this.state.offsetY / this.state.scale}px)`}} className={"grid"}>
+                    <Container ref={this.containerRef} className={darkMode ? "dark" : ""} id="oflow-container">
+                        <table ref={this.tableRef} onTouchEnd={this.handleTouchEnd} onTouchStart={this.handleTouchStart} onTouchMove={this.handleTouchMove} onMouseMove={this.handleMouseOverTable} style={{transform:`scale(${scale}) translate(${this.state.offsetX}px, ${this.state.offsetY}px)`}} className={"grid"}>
                             <tbody>
                                 {board.map((row, i) => (
                                 <tr key={i}>

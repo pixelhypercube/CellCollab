@@ -29,6 +29,9 @@ header {
   height:500px;
   overflow: hidden;
   border:2px solid black;
+  touch-action:none;
+  overscroll-behavior: contain;
+  transform-origin: 0 0;
 }
 
 /* scrollbar for oflow-container */
