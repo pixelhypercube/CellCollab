@@ -6,6 +6,7 @@ import Brush from "./Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { FaChevronDown, FaChevronUp, FaCopy, FaSun, FaMoon } from 'react-icons/fa';
+import GameCanvas from "./GameCanvas";
 const MySwal = withReactContent(Swal);
 
 export class Game extends React.Component {
@@ -25,16 +26,29 @@ export class Game extends React.Component {
             hoverRange: [],
             fadeOut:false,
             darkMode:true,
+            iterations:0,
+            speed: 100,
+            
+
+            // canvas stuff
+            canvasWidth:800,
+            canvasHeight:600,
+            cellWidth:15,
+            cellHeight:15, 
+            canvasMouseX:0,
+            canvasMouseY:0,
+            offset:{x:0,y:0},
+            scale:1
 
             // transform keys
-            scale:1,
-            offsetX:0,
-            offsetY:0,
-            mouseX:0,
-            mouseY:0,
-            isDragging:false,
-            lastMouseX:0,
-            lastMouseY:0
+            // scale:1,
+            // offsetX:0,
+            // offsetY:0,
+            // mouseX:0,
+            // mouseY:0,
+            // isDragging:false,
+            // lastMouseX:0,
+            // lastMouseY:0
         };
     }
 
@@ -209,9 +223,9 @@ export class Game extends React.Component {
             } else {
                 socket.emit("joinRoom", roomId);
                 this.setState({ 
-                    boardWidth: 35, 
-                    boardHeight: 25, 
-                    hoverRange: Array.from({ length: 35 }, () => Array(25).fill(0))
+                    boardWidth: 100, 
+                    boardHeight: 100, 
+                    hoverRange: Array.from({ length: 100 }, () => Array(100).fill(0))
                 });
             }
         } else { // without roomId
@@ -267,9 +281,9 @@ export class Game extends React.Component {
             } else {
                 socket.emit("joinRoom","");
                 this.setState({ 
-                    boardWidth: 35, 
-                    boardHeight: 25, 
-                    hoverRange: Array.from({ length: 35 }, () => Array(25).fill(0))
+                    boardWidth: 100, 
+                    boardHeight: 100, 
+                    hoverRange: Array.from({ length: 100 }, () => Array(100).fill(0))
                 });
             }
 
@@ -329,6 +343,11 @@ export class Game extends React.Component {
         }
     };
 
+    handleToggleSpeed = (e) => {
+        this.setState({speed:e.target.value});
+        socket.emit("speed",this.state.roomId,e.target.value);
+    }
+
     // non-socket functions
 
     handleMouseOver = (i, j) => {
@@ -384,8 +403,12 @@ export class Game extends React.Component {
         this.setState((prevState) => ({ darkMode: !prevState.darkMode }));
     }
 
+    handleTransformChange = ({offset,scale}) => {
+        this.setState({offset,scale});
+    }
+
     render() {
-    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined, darkMode } = this.state;
+    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined, darkMode, iterations, cellWidth, cellHeight } = this.state;
 
     return (
         <div>
@@ -464,7 +487,92 @@ export class Game extends React.Component {
                     <h1>
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
-                    <table  className={"grid"}>
+                    <GameCanvas 
+                    canvasWidth={this.state.canvasWidth} 
+                    canvasHeight={this.state.canvasHeight}
+                    cellWidth={this.state.cellWidth}
+                    cellHeight={this.state.cellHeight}
+                    canvasMouseX={this.state.canvasMouseX}
+                    canvasMouseY={this.state.canvasMouseY}
+                    hoverRange={this.state.hoverRange}
+                    hoverPosition={this.state.hoverPosition}
+                    currentBrushBoard={this.state.currentBrushBoard}
+                    board={this.state.board}
+                    darkMode={this.state.darkMode}
+                    onClick={(e)=>{
+                        const canvas = e.target;
+                        const rect = canvas.getBoundingClientRect();
+                        const canvasMouseX = e.clientX-rect.left;
+                        const canvasMouseY = e.clientY-rect.top;
+
+                        const adjustedX = (canvasMouseX - this.state.offset.x) / this.state.scale;
+                        const adjustedY = (canvasMouseY - this.state.offset.y) / this.state.scale;
+
+                        // UPDATE CELL
+                        const i = Math.floor(adjustedY/cellHeight);
+                        const j = Math.floor(adjustedX/cellWidth);
+                        
+                        if (board[i][j]===0) board[i][j] = 1;
+                        else board[i][j] = 0;
+                        this.setState({adjustedX,adjustedY,board});
+                        socket.emit("updateCellBrush", roomId, i, j, this.state.currentBrushBoard);
+                    }}
+                    onMouseMove={(e)=>{
+                        const canvas = e.target;
+                        const rect = canvas.getBoundingClientRect();
+                        const canvasMouseX = e.clientX-rect.left;
+                        const canvasMouseY = e.clientY-rect.top;
+
+                        const { scale, offset } = this.state;
+
+                        const adjustedX = (canvasMouseX - offset.x) / scale;
+                        const adjustedY = (canvasMouseY - offset.y) / scale;
+
+
+                        // UPDATE CELL
+                        const i = Math.floor(adjustedY/cellHeight);
+                        const j = Math.floor(adjustedX/cellWidth);
+                        
+                        const brushBoard = this.state.currentBrushBoard;
+                        const brushHeight = brushBoard.length;
+                        const brushWidth = brushBoard[0].length;
+
+                        // Create a new hover range
+                        const newHoverRange = Array.from({ length: this.state.board.length }, () =>
+                            Array(this.state.board[0].length).fill(0)
+                        );
+
+                        // Update the hover range based on the brush dimensions and position
+                        for (let di = 0; di < brushHeight; di++) {
+                            for (let dj = 0; dj < brushWidth; dj++) {
+                                const boardI = i + di;
+                                const boardJ = j + dj;
+
+                                if (
+                                    boardI >= 0 &&
+                                    boardI < this.state.board.length &&
+                                    boardJ >= 0 &&
+                                    boardJ < this.state.board[0].length &&
+                                    brushBoard[di][dj] === 1 // Only highlight cells where the brush has a `1`
+                                ) {
+                                    newHoverRange[boardI][boardJ] = 1;
+                                }
+                            }
+                        }
+
+                        // Only update the state if the hover range has changed
+                        if (JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverRange)) {
+                            this.setState({
+                                hoverRange: newHoverRange,
+                                canvasMouseX:adjustedX,
+                                canvasMouseY:adjustedY,
+                            });
+                        }
+
+                    }}
+                    onTransformChange={this.handleTransformChange}
+                    ></GameCanvas>
+                    {/* <table className={"grid"}>
                         <tbody>
                             {board.map((row, i) => (
                             <tr key={i}>
@@ -483,7 +591,14 @@ export class Game extends React.Component {
                             </tr>
                             ))}
                         </tbody>
-                    </table>
+                    </table> */}
+                    <br></br>
+                    <p>Iterations: <strong>{iterations}</strong></p>
+                    <br></br>
+                    <Container style={{width:"50%"}}>
+                        <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
+                        <Form.Range min={25} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
+                    </Container>
                     <br></br>
                     <Container className="d-flex" id="main-container">
                         <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleToggleRun}>

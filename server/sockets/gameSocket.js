@@ -14,7 +14,7 @@ module.exports = function(io) {
         return crypto.createHash('sha256').update(raw).digest('hex').slice(0, 8); // 8-char room ID
     };
     
-    const DEFAULT_WIDTH = 35, DEFAULT_HEIGHT = 25;
+    const DEFAULT_WIDTH = 100, DEFAULT_HEIGHT = 100;
     const DEFAULT_SPEED = 100; // speed (ms)
     io.on('connection', (socket) => {
         console.log(`Client connected: ${socket.id}`);
@@ -158,7 +158,7 @@ module.exports = function(io) {
         socket.on("reset", (roomId) => {
             if (rooms[roomId]) {
                 const room = rooms[roomId];
-                const { width, height } = room.board[0].length ? { width: room.board[0].length, height: room.board.length } : { width: 25, height: 25 };
+                const { width, height } = room.board[0].length ? { width: room.board[0].length, height: room.board.length } : { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
                 room.board = initBoard(height, width, false);
                 io.to(roomId).emit("update", room.board);
                 io.to(roomId).emit("iterations",0);
@@ -171,6 +171,23 @@ module.exports = function(io) {
                 room.board[i][j] = value;
                 io.to(roomId).emit("update", room.board);
                 io.to(roomId).emit("iterations",++room.iterations);
+            }
+        });
+
+        socket.on("updateCellBrush",(roomId,i,j,brush) => {
+            if (rooms[roomId]) {
+                const room = rooms[roomId];
+                for (let x = 0; x < brush.length; x++) {
+                    for (let y = 0; y < brush[0].length; y++) {
+                        const boardX = i + x;
+                        const boardY = j + y;
+
+                        if (boardX >= 0 && boardX < room.board.length && boardY >= 0 && boardY < room.board[0].length) {
+                            room.board[boardX][boardY] = brush[x][y];
+                        }
+                    }
+                }
+                io.to(roomId).emit("update", room.board);
             }
         });
 
