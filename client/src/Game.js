@@ -25,8 +25,6 @@ export class Game extends React.Component {
             hoverRange: [],
             fadeOut:false,
             darkMode:true,
-            speed:100,
-            iterations:0,
 
             // transform keys
             scale:1,
@@ -36,14 +34,8 @@ export class Game extends React.Component {
             mouseY:0,
             isDragging:false,
             lastMouseX:0,
-            lastMouseY:0,
-
-            pinchMidPoint:0,
-            initialDistance:1,
+            lastMouseY:0
         };
-
-        this.tableRef = React.createRef();
-        this.containerRef = React.createRef();
     }
 
     componentDidMount() {
@@ -81,10 +73,6 @@ export class Game extends React.Component {
             });
         });
 
-        socket.on("iterations",(iterations)=>{
-            this.setState({iterations});
-        });
-
         // dark mode detection
         this.darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         this.setState({ darkMode: this.darkModeMediaQuery.matches });
@@ -102,13 +90,6 @@ export class Game extends React.Component {
         } else {
             document.body.classList.remove("dark");
         }
-
-        // table scroll and move functions
-        window.addEventListener('wheel', this.handleScroll, { passive: false });
-        
-        window.addEventListener('mousemove', this.handleMouseMove);
-        window.addEventListener('mouseup', this.handleMouseUp);
-        window.addEventListener('mousedown', this.handleMouseDown);
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -129,13 +110,6 @@ export class Game extends React.Component {
         if (this.darkModeMediaQuery && this.darkModeChangeHandler) {
             this.darkModeMediaQuery.removeEventListener('change', this.darkModeChangeHandler);
         }
-
-        if (this.tableRef.current)
-            window.removeEventListener('wheel', this.handleScroll);
-        
-        window.removeEventListener('mousemove', this.handleMouseMove);
-        window.removeEventListener('mouseup', this.handleMouseUp);
-        window.removeEventListener('mousedown', this.handleMouseDown);
     }
 
     // room and board functions
@@ -298,6 +272,26 @@ export class Game extends React.Component {
                     hoverRange: Array.from({ length: 35 }, () => Array(25).fill(0))
                 });
             }
+
+            // no need the alert anymore
+            // MySwal.fire({
+            //     toast:true,
+            //     title:"Please enter a Room ID!",
+            //     timer: 2000,
+            //     timerProgressBar: true,
+            //     icon:"warning",
+            //     didOpen:() => {
+            //         const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+            //         if (popup) {
+            //             popup.style.width = '250px';
+            //             popup.style.fontSize = '14px';
+            //             popup.style.padding = "10px";
+            //             popup.style.top = "-75px";
+            //         }
+            //         const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+            //         if (popupTitle) popupTitle.style.margin = "0px 1em";
+            //     }
+            // });
         }
     };
 
@@ -314,11 +308,6 @@ export class Game extends React.Component {
     handleReset = () => {
         socket.emit("reset",this.state.roomId);
     };
-
-    handleToggleSpeed = (e) => {
-        this.setState({speed:e.target.value});
-        socket.emit("speed",this.state.roomId,e.target.value);
-    }
 
     handleCellClick = (i, j) => {
         let currentBrushBoard = this.state.currentBrushBoard;
@@ -395,205 +384,15 @@ export class Game extends React.Component {
         this.setState((prevState) => ({ darkMode: !prevState.darkMode }));
     }
 
-    // CLAMPING
-
-    getClampedOffsets = (offsetX, offsetY, scale) => {
-        const container = this.containerRef.current;
-        const table = this.tableRef.current;
-
-        if (!container || !table) return { offsetX, offsetY };
-
-        const containerWidth = container.offsetWidth;
-        const containerHeight = container.offsetHeight;
-        const tableWidth = table.offsetWidth * scale;
-        const tableHeight = table.offsetHeight * scale;
-
-        const minOffsetX = Math.min(0, containerWidth - tableWidth);
-        const minOffsetY = Math.min(0, containerHeight - tableHeight);
-        const maxOffsetX = 0;
-        const maxOffsetY = 0;
-
-        return {
-            offsetX: this.clamp(offsetX, minOffsetX, maxOffsetX),
-            offsetY: this.clamp(offsetY, minOffsetY, maxOffsetY)
-        };
-    };
-
-    clamp = (value, min, max) => {
-        return Math.max(min, Math.min(value, max));
-    };
-
-
-    handleScroll = (e) => {
-        e.preventDefault();
-        const delta = -e.deltaY;
-
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
-        this.setState((prevState) => {
-            let newScale = (prevState.scale ?? 1) + delta * 0.001;
-            newScale = Math.min(Math.max(newScale, 0.2), 3); // clamp between 0.2 and 3
-            
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-
-            const offsetX = (mouseX - centerX) * (1 - newScale);
-            const offsetY = (mouseY - centerY) * (1 - newScale);
-            
-            const clamped = this.getClampedOffsets(offsetX, offsetY, newScale);
-            return {
-                scale: newScale,
-                offsetX: clamped.offsetX,
-                offsetY: clamped.offsetY
-            };
-        });
-    }
-
-    handleDrag = (e) => {
-        e.preventDefault();
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
-
-        this.setState({mouseX,mouseY});
-    }
-
-    handleMouseMove = (e) => {
-        if (this.state.isDragging) {
-            const { lastMouseX, lastMouseY } = this.state;
-
-            const deltaX = e.clientX - lastMouseX;
-            const deltaY = e.clientY - lastMouseY;
-
-            this.setState((prevState) => {
-                const newOffsetX = prevState.offsetX + deltaX;
-                const newOffsetY = prevState.offsetY + deltaY;
-                const clamped = this.getClampedOffsets(newOffsetX, newOffsetY, prevState.scale);
-
-                return {
-                    offsetX: clamped.offsetX,
-                    offsetY: clamped.offsetY,
-                    lastMouseX: e.clientX,
-                    lastMouseY: e.clientY,
-                }
-            });
-        }
-
-        this.setState({ mouseX: e.clientX, mouseY: e.clientY });
-    }
-
-    handleMouseDown = (e) => {
-        e.preventDefault();
-        this.setState({
-            isDragging: true,
-            lastMouseX: e.clientX,
-            lastMouseY: e.clientY,
-        });
-    };
-
-    getDistance = (touch1, touch2) => {
-        const dx = touch1.pageX - touch2.pageX;
-        const dy = touch1.pageY - touch2.pageY;
-        return Math.sqrt(dx * dx + dy * dy);
-    };
-
-    handleTouchStart = (e) => {
-        e.preventDefault();
-        if (e.touches.length === 1) {
-            const touch = e.touches[0];
-            this.setState({
-                lastTouchX: touch.pageX,
-                lastTouchY: touch.pageY,
-            });
-        } else if (e.touches.length === 2) {
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            const dist = this.getDistance(touch1, touch2);
-            const midX = (touch1.pageX + touch2.pageX) / 2;
-            const midY = (touch1.pageY + touch2.pageY) / 2;
-
-            this.setState({
-                initialDistance: dist,
-                initialScale: this.state.scale,
-                pinchMidpoint: { x: midX, y: midY },
-            });
-        }
-    };
-
-    handleTouchMove = (e) => {
-        e.preventDefault();
-
-        if (e.touches.length === 1) {
-            // Dragging
-            const touch = e.touches[0];
-            const deltaX = touch.pageX - this.state.lastTouchX;
-            const deltaY = touch.pageY - this.state.lastTouchY;
-
-            this.setState((prevState) => ({
-                offsetX: prevState.offsetX + deltaX,
-                offsetY: prevState.offsetY + deltaY,
-                lastTouchX: touch.pageX,
-                lastTouchY: touch.pageY,
-            }));
-        } else if (e.touches.length === 2) {
-            // Scaling
-            const newDistance = this.getDistance(e.touches[0], e.touches[1]);
-            const { initialDistance, initialScale, pinchMidpoint, offsetX, offsetY } = this.state;
-
-            if (initialDistance && initialScale && pinchMidpoint) {
-                const scaleFactor = newDistance / initialDistance;
-                const newScale = initialScale * scaleFactor;
-                
-                const dx = pinchMidpoint.x;
-                const dy = pinchMidpoint.y;
-
-                const newOffsetX = dx - (dx - offsetX) * (newScale / this.state.scale);
-                const newOffsetY = dy - (dy - offsetY) * (newScale / this.state.scale);
-
-                const clamped = this.getClampedOffsets(newOffsetX, newOffsetY, newScale);
-                
-                this.setState({
-                    scale: newScale,
-                    offsetX: clamped.offsetX,
-                    offsetY: clamped.offsetY,
-                });
-            }
-        }
-    };
-
-    handleTouchEnd = (e) => {
-        if (e.touches.length === 1) {
-            const touch = e.touches[0];
-            this.setState({
-                lastTouchX: touch.pageX,
-                lastTouchY: touch.pageY,
-                initialDistance: null,
-                initialScale: null,
-                pinchMidpoint: null,
-            });
-        } else if (e.touches.length === 0) {
-            this.setState({
-                lastTouchX: null,
-                lastTouchY: null,
-                initialDistance: null,
-                initialScale: null,
-                pinchMidpoint: null,
-            });
-        }
-    };
-
-    handleMouseUp = () => {
-        this.setState({ isDragging: false });
-    };
-
     render() {
-    const { additionalOptionsEnabled, board, isRunning, roomId, iterations, boardWidth, boardHeight, isJoined, darkMode, scale } = this.state;
+    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined, darkMode } = this.state;
 
     return (
         <div>
             <header className={darkMode ? "dark" : ""}>
                 <div id="toggle-light-dark" onClick={this.handleToggleDarkMode}>{darkMode ? <FaMoon></FaMoon> : <FaSun></FaSun>}</div>
                 <h1>CellCollab</h1>
-                <h5>A Multiplayer Sandbox Implementation of <a className={darkMode ? "dark" : ""} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
+                <h5>A Multiplayer Sandbox Implementation of <a  className={darkMode ? "dark" : ""} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
                 <a className={darkMode ? "dark" : ""} href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
             <main>
@@ -633,6 +432,8 @@ export class Game extends React.Component {
                                                 type="number"
                                                 value={boardWidth}
                                                 onChange={this.handleWidthChange}
+                                                // min="10"
+                                                // max="50"
                                                 />
                                             </Form.Group>
                                         </Col>
@@ -643,6 +444,8 @@ export class Game extends React.Component {
                                                 type="number"
                                                 value={boardHeight}
                                                 onChange={this.handleHeightChange}
+                                                // min="10"
+                                                // max="50"
                                                 />
                                             </Form.Group>
                                         </Col>
@@ -661,41 +464,27 @@ export class Game extends React.Component {
                     <h1>
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
-                    <Container ref={this.containerRef} className={darkMode ? "dark" : ""} id="oflow-container">
-                        <table ref={this.tableRef} onTouchEnd={this.handleTouchEnd} onTouchStart={this.handleTouchStart} onTouchMove={this.handleTouchMove} onMouseMove={this.handleMouseOverTable} style={{transform:`scale(${scale}) translate(${this.state.offsetX}px, ${this.state.offsetY}px)`}} className={"grid"}>
-                            <tbody>
-                                {board.map((row, i) => (
-                                <tr key={i}>
-                                    {row.map((cell, j) => (
-                                    <td
-                                        key={j}
-                                        className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
-                                            ${this.state.hoverPosition!==null 
-                                                && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
-                                        }`}
-                                        onClick={() => this.handleCellClick(i, j)}
-                                        onMouseOver={() => this.handleMouseOver(i, j)}
-                                        onMouseLeave={() => this.setState({ hoverPosition: null })}
-                                    ></td>
-                                    ))}
-                                </tr>
+                    <table  className={"grid"}>
+                        <tbody>
+                            {board.map((row, i) => (
+                            <tr key={i}>
+                                {row.map((cell, j) => (
+                                <td
+                                    key={j}
+                                    className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
+                                        ${this.state.hoverPosition!==null 
+                                            && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
+                                    }`}
+                                    onClick={() => this.handleCellClick(i, j)}
+                                    onMouseOver={() => this.handleMouseOver(i, j)}
+                                    onMouseLeave={() => this.setState({ hoverPosition: null })}
+                                ></td>
                                 ))}
-                            </tbody>
-                        </table>
-                    </Container>
+                            </tr>
+                            ))}
+                        </tbody>
+                    </table>
                     <br></br>
-                    {/* <Container className="d-flex">
-                        <Row>
-                            <Col>
-                                
-                            </Col>
-                            <Col>
-                                <Button></Button>
-                                <Button></Button>
-                            </Col>
-                        </Row>
-                    </Container> */}
-                    <p>Iterations: <strong>{iterations}</strong></p>
                     <Container className="d-flex" id="main-container">
                         <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleToggleRun}>
                             {isRunning ? "Pause" : "Play"}
@@ -706,11 +495,6 @@ export class Game extends React.Component {
                         <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleReset}>
                             Reset
                         </Button>
-                    </Container>
-                    <br></br>
-                    <Container style={{width:"50%"}}>
-                        <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
-                        <Form.Range min={25} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
                     </Container>
                     <br></br>
                     <Container>
