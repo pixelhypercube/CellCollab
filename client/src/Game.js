@@ -32,7 +32,7 @@ export class Game extends React.Component {
 
             // canvas stuff
             canvasWidth:800,
-            canvasHeight:600,
+            canvasHeight:800,
             cellWidth:15,
             cellHeight:15, 
             canvasMouseX:0,
@@ -67,6 +67,10 @@ export class Game extends React.Component {
 
         socket.on("hashedRoomId",(roomId)=>{
             this.setState({roomId});
+        });
+
+        socket.on("iterations",(iterations)=>{
+            this.setState({iterations});
         });
 
         socket.on("roomExists",(roomId,roomExists)=>{

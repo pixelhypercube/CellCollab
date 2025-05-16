@@ -127,12 +127,13 @@ export default class GameCanvas extends React.Component {
         let {cellWidth,cellHeight,darkMode} = this.state;
         if (darkMode) {
             ctx.fillStyle = isAlive ? "white" : "black";
-            ctx.strokeStyle = isAlive ? "grey" : "white";
+            ctx.strokeStyle = isAlive ? "black" : "white";
         }
         else {
             ctx.fillStyle = isAlive ? "black" : "white";
-            ctx.strokeStyle = isAlive ? "white" : "grey";
+            ctx.strokeStyle = isAlive ? "white" : "black";
         }
+        ctx.lineWidth = Math.min(this.state.scale*0.05,0.8);
         ctx.fillRect(xPos,yPos,cellWidth,cellHeight);
         if (isHovering) {
             ctx.fillStyle = "rgba(127, 127, 127, 0.5)";

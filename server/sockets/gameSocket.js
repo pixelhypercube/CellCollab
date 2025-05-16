@@ -161,7 +161,8 @@ module.exports = function(io) {
                 const { width, height } = room.board[0].length ? { width: room.board[0].length, height: room.board.length } : { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
                 room.board = initBoard(height, width, false);
                 io.to(roomId).emit("update", room.board);
-                io.to(roomId).emit("iterations",0);
+                room.iterations = 0;
+                io.to(roomId).emit("iterations",room.iterations);
             }
         });
 
