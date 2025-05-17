@@ -5,8 +5,9 @@ import {Button,Container,Form,Row,Col,Alert} from "react-bootstrap";
 import Brush from "./Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { FaChevronDown, FaChevronUp, FaCopy, FaSun, FaMoon } from 'react-icons/fa';
+import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon } from 'react-icons/fa';
 import GameCanvas from "./GameCanvas";
+import BrushPreview from "./BrushPreview";
 const MySwal = withReactContent(Swal);
 
 export class Game extends React.Component {
@@ -20,7 +21,7 @@ export class Game extends React.Component {
             boardWidth: null,
             boardHeight: null,
             isJoined: false,
-            currentBrush:"Default", // brush
+            currentBrush:"Default",// brush
             currentBrushBoard:[[1]],
             hoverPosition: null,
             hoverRange: [],
@@ -28,13 +29,23 @@ export class Game extends React.Component {
             darkMode:true,
             iterations:0,
             speed: 100,
+
+            // brush preview
+            rotation:0,
+
+            isDragging:false,
+            mouseIsDown:false,
+
+            // brush pagination
+            brushPage:0,
+            brushPageNames:["Defaults","Still Lifes","Oscillators","Spaceships","Perpetual Patterns","Others"],
             
 
             // canvas stuff
             canvasWidth:800,
             canvasHeight:800,
             cellWidth:15,
-            cellHeight:15, 
+            cellHeight:15,
             canvasMouseX:0,
             canvasMouseY:0,
             offset:{x:0,y:0},
@@ -53,15 +64,15 @@ export class Game extends React.Component {
     }
 
     componentDidMount() {
-        socket.on("init", (newBoard) => {
+        socket.on("init",(newBoard) => {
             this.setState({board:newBoard});
         });
 
-        socket.on("update", (newBoard) => {
+        socket.on("update",(newBoard) => {
             this.setState({board:newBoard});
         });
 
-        socket.on("status", (status) => {
+        socket.on("status",(status) => {
             this.setState({isRunning:status});
         });
 
@@ -77,7 +88,7 @@ export class Game extends React.Component {
             this.setState({isJoined:roomExists});
             if (!roomExists) {
                 Swal.fire({
-                    title:`Sorry, room '${roomId}' doesn't exist!`,
+                    title:`Sorry,room '${roomId}' doesn't exist!`,
                     icon:"error",
                 });
             }
@@ -87,7 +98,7 @@ export class Game extends React.Component {
             this.setState({
                 boardWidth,
                 boardHeight,
-                hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0))
+                hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0))
             });
         });
 
@@ -99,7 +110,7 @@ export class Game extends React.Component {
             this.setState({ darkMode: e.matches });
         };
 
-        this.darkModeMediaQuery.addEventListener('change', this.darkModeChangeHandler);
+        this.darkModeMediaQuery.addEventListener('change',this.darkModeChangeHandler);
 
         // set dark mode (for body only)
 
@@ -110,7 +121,7 @@ export class Game extends React.Component {
         }
     }
 
-    componentDidUpdate(prevProps, prevState) {
+    componentDidUpdate(prevProps,prevState) {
         if (prevState.darkMode !== this.state.darkMode) {
             if (this.state.darkMode) {
                 document.body.classList.add("dark");
@@ -126,7 +137,7 @@ export class Game extends React.Component {
         socket.off("status");
 
         if (this.darkModeMediaQuery && this.darkModeChangeHandler) {
-            this.darkModeMediaQuery.removeEventListener('change', this.darkModeChangeHandler);
+            this.darkModeMediaQuery.removeEventListener('change',this.darkModeChangeHandler);
         }
     }
 
@@ -136,8 +147,8 @@ export class Game extends React.Component {
         if (this.state.additionalOptionsEnabled) {
             this.setState({ fadeOut: true });
             setTimeout(() => {
-                this.setState({ additionalOptionsEnabled: false, fadeOut: false });
-            }, 100);
+                this.setState({ additionalOptionsEnabled: false,fadeOut: false });
+            },100);
         } else {
             this.setState({ additionalOptionsEnabled: true });
         }
@@ -151,7 +162,7 @@ export class Game extends React.Component {
         const newWidth = Number(e.target.value);
         this.setState({
             boardWidth: newWidth,
-            hoverRange: Array.from({ length: this.state.boardHeight }, () => Array(newWidth).fill(0))
+            hoverRange: Array.from({ length: this.state.boardHeight },() => Array(newWidth).fill(0))
         });
     };
 
@@ -159,7 +170,7 @@ export class Game extends React.Component {
         const newHeight = Number(e.target.value);
         this.setState({
             boardHeight: newHeight,
-            hoverRange: Array.from({ length: newHeight }, () => Array(this.state.boardWidth).fill(0))
+            hoverRange: Array.from({ length: newHeight },() => Array(this.state.boardWidth).fill(0))
         });
     };
 
@@ -170,16 +181,16 @@ export class Game extends React.Component {
     }
 
     handleJoinRoom = () => {
-        const { roomId, boardWidth, boardHeight } = this.state;
+        const { roomId,boardWidth,boardHeight } = this.state;
         // if there's roomid
         if (roomId) {
             // check if room exists
 
             if (this.state.additionalOptionsEnabled) {
                 if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
-                    socket.emit("joinRoomWithSettings", roomId, boardWidth, boardHeight);
+                    socket.emit("joinRoomWithSettings",roomId,boardWidth,boardHeight);
                     this.setState({ 
-                        hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0)),
+                        hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
                     });
                 } else {
                     if (this.isInvalidSize(boardWidth)) {
@@ -225,19 +236,19 @@ export class Game extends React.Component {
                     }
                 }
             } else {
-                socket.emit("joinRoom", roomId);
+                socket.emit("joinRoom",roomId);
                 this.setState({ 
-                    boardWidth: 100, 
-                    boardHeight: 100, 
-                    hoverRange: Array.from({ length: 100 }, () => Array(100).fill(0))
+                    boardWidth: 100,
+                    boardHeight: 100,
+                    hoverRange: Array.from({ length: 100 },() => Array(100).fill(0))
                 });
             }
         } else { // without roomId
             if (this.state.additionalOptionsEnabled) {
                 if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
-                    socket.emit("joinRoomWithSettings", "", boardWidth, boardHeight);
+                    socket.emit("joinRoomWithSettings","",boardWidth,boardHeight);
                     this.setState({ 
-                        hoverRange: Array.from({ length: boardHeight }, () => Array(boardWidth).fill(0)),
+                        hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
                     });
                 } else {
                     if (this.isInvalidSize(boardWidth)) {
@@ -285,9 +296,9 @@ export class Game extends React.Component {
             } else {
                 socket.emit("joinRoom","");
                 this.setState({ 
-                    boardWidth: 100, 
-                    boardHeight: 100, 
-                    hoverRange: Array.from({ length: 100 }, () => Array(100).fill(0))
+                    boardWidth: 100,
+                    boardHeight: 100,
+                    hoverRange: Array.from({ length: 100 },() => Array(100).fill(0))
                 });
             }
 
@@ -327,21 +338,21 @@ export class Game extends React.Component {
         socket.emit("reset",this.state.roomId);
     };
 
-    handleCellClick = (i, j) => {
+    handleCellClick = (i,j) => {
         let currentBrushBoard = this.state.currentBrushBoard;
-        let brushHeight = currentBrushBoard.length, brushWidth = currentBrushBoard[0].length;
+        let brushHeight = currentBrushBoard.length,brushWidth = currentBrushBoard[0].length;
         let newValue;
 
         let boardHeight = this.state.board.length;
         let boardWidth = this.state.board[0].length;
-        for (let di = i, idx = 0;di<i+brushHeight;di++, idx++) {
+        for (let di = i,idx = 0;di<i+brushHeight;di++,idx++) {
             if (di < 0 || di >= boardHeight) continue;
-            for (let dj = j, jdx = 0;dj<j+brushWidth;dj++, jdx++) {
+            for (let dj = j,jdx = 0;dj<j+brushWidth;dj++,jdx++) {
                 if (dj < 0 || dj >= boardWidth) continue;
 
                 if (currentBrushBoard[idx][jdx] === 1) {
                     newValue = this.state.board[di][dj] === 1 ? 0 : 1;
-                    socket.emit("updateCell",this.state.roomId, di, dj, newValue);
+                    socket.emit("updateCell",this.state.roomId,di,dj,newValue);
                 }
             }
         }
@@ -354,16 +365,16 @@ export class Game extends React.Component {
 
     // non-socket functions
 
-    handleMouseOver = (i, j) => {
-        this.setState({hoverPosition:{i, j}});
+    handleMouseOver = (i,j) => {
+        this.setState({hoverPosition:{i,j}});
         let currentBrushBoard = this.state.currentBrushBoard;
-        let brushHeight = currentBrushBoard.length, brushWidth = currentBrushBoard[0].length;
+        let brushHeight = currentBrushBoard.length,brushWidth = currentBrushBoard[0].length;
         if (this.state.hoverPosition) {
             let hoverRange = Array.from({length: this.state.boardHeight},() =>
                 Array(this.state.boardWidth).fill(0)
             );
-            for (let di = i,idx = 0;di < i + brushHeight;di++, idx++) {
-                for (let dj = j,jdx = 0;dj < j + brushWidth;dj++, jdx++) {
+            for (let di = i,idx = 0;di < i + brushHeight;di++,idx++) {
+                for (let dj = j,jdx = 0;dj < j + brushWidth;dj++,jdx++) {
                     if (
                         di >= 0 && di < hoverRange.length &&
                         dj >= 0 && dj < hoverRange[di].length &&
@@ -377,7 +388,7 @@ export class Game extends React.Component {
         }
     }
 
-    setCurrentBrush = (currentBrush, currentBrushBoard) => {
+    setCurrentBrush = (currentBrush,currentBrushBoard) => {
         this.setState({currentBrush,currentBrushBoard});
     }
 
@@ -411,8 +422,38 @@ export class Game extends React.Component {
         this.setState({offset,scale});
     }
 
+    rotateMatrixClockwise = (matrix) => {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        const res = [];
+
+        for (let i = 0; i < cols; i++) {
+            res[i] = [];
+            for (let j = rows - 1; j >= 0; j--) {
+                res[i].push(matrix[j][i]);
+            }
+        }
+
+        return res;
+    }
+
+    rotateMatrixCounterClockwise = (matrix) => {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        const res = [];
+
+        for (let i = cols - 1; i >= 0; i--) {
+            res[cols - 1 - i] = [];
+            for (let j = 0; j < rows; j++) {
+                res[cols - 1 - i].push(matrix[j][i]);
+            }
+        }
+
+        return res;
+    }
+
     render() {
-    const { additionalOptionsEnabled, board, isRunning, roomId, boardWidth, boardHeight, isJoined, darkMode, iterations, cellWidth, cellHeight } = this.state;
+    const { additionalOptionsEnabled,board,isRunning,roomId,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames } = this.state;
 
     return (
         <div>
@@ -422,7 +463,7 @@ export class Game extends React.Component {
                 <h5>A Multiplayer Sandbox Implementation of <a  className={darkMode ? "dark" : ""} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
                 <a className={darkMode ? "dark" : ""} href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
-            <main>
+            <main style={{height:"100%"}}>
                 {!isJoined ? (
                 <div className={`additional-settings-wrapper ${this.state.additionalOptionsEnabled ? 'open' : 'closed'}`}>
                     <Container className={darkMode ? "dark" : ""} id="join-room-container">
@@ -440,7 +481,7 @@ export class Game extends React.Component {
                             <br></br>
                             <Form.Group style={{borderBottom:"1px solid grey",marginBottom:"5px"}} controlId="formEnableAdditionalSettings">
                                 <div 
-                                    style={{ display: 'flex', justifyContent:"space-between", alignItems: 'center', cursor: 'pointer' }}
+                                    style={{ display: 'flex',justifyContent:"space-between",alignItems: 'center',cursor: 'pointer' }}
                                     onClick={this.handleAdditionalSettings}
                                     >
                                     <h5 style={{ marginRight: '8px' }}>Additional Settings</h5>
@@ -450,7 +491,12 @@ export class Game extends React.Component {
                             {
                                 additionalOptionsEnabled ? 
                                 <div className={this.state.fadeOut ? 'fade-out' : 'fade-in'}>
-                                    <Alert variant="danger" style={{textAlign:"left"}}><strong>WARNING:</strong> Changing the size of an existing board may alter its layout and content. Please proceed with caution to avoid unintended changes.</Alert>
+                                    <Alert 
+                                    variant="danger" 
+                                    style={{textAlign:"left"}}
+                                    className={darkMode ? "dark" : ""}
+                                    ><strong>WARNING:</strong> Changing the size of an existing board may alter its layout and content. Please proceed with caution to avoid unintended changes.
+                                    </Alert>
                                     <Row id="additional-options">
                                         <Col>
                                             <Form.Group controlId="formBoardWidth">
@@ -491,190 +537,285 @@ export class Game extends React.Component {
                     <h1>
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
-                    <GameCanvas 
-                    canvasWidth={this.state.canvasWidth} 
-                    canvasHeight={this.state.canvasHeight}
-                    cellWidth={this.state.cellWidth}
-                    cellHeight={this.state.cellHeight}
-                    canvasMouseX={this.state.canvasMouseX}
-                    canvasMouseY={this.state.canvasMouseY}
-                    hoverRange={this.state.hoverRange}
-                    hoverPosition={this.state.hoverPosition}
-                    currentBrushBoard={this.state.currentBrushBoard}
-                    board={this.state.board}
-                    darkMode={this.state.darkMode}
-                    onClick={(e)=>{
-                        const canvas = e.target;
-                        const rect = canvas.getBoundingClientRect();
-                        const canvasMouseX = e.clientX-rect.left;
-                        const canvasMouseY = e.clientY-rect.top;
+                    <Row className="justify-content-center">
+                        <Col xl={8} lg={12} md={12} sm={12} xs={12} className="game-canvas-container">
+                            <GameCanvas 
+                            canvasWidth={this.state.canvasWidth} 
+                            canvasHeight={this.state.canvasHeight}
+                            cellWidth={this.state.cellWidth}
+                            cellHeight={this.state.cellHeight}
+                            canvasMouseX={this.state.canvasMouseX}
+                            canvasMouseY={this.state.canvasMouseY}
+                            hoverRange={this.state.hoverRange}
+                            hoverPosition={this.state.hoverPosition}
+                            currentBrushBoard={this.state.currentBrushBoard}
+                            board={this.state.board}
+                            darkMode={this.state.darkMode}
+                            onMouseDown={(e)=>{
+                                this.setState({mouseIsDown:true});
+                            }}
+                            onMouseUp={(e)=>{
+                                if (!this.state.isDragging) {
+                                    const canvas = e.target;
+                                    const rect = canvas.getBoundingClientRect();
+                                    const canvasMouseX = e.clientX-rect.left;
+                                    const canvasMouseY = e.clientY-rect.top;
 
-                        const adjustedX = (canvasMouseX - this.state.offset.x) / this.state.scale;
-                        const adjustedY = (canvasMouseY - this.state.offset.y) / this.state.scale;
+                                    const adjustedX = (canvasMouseX - this.state.offset.x) / this.state.scale;
+                                    const adjustedY = (canvasMouseY - this.state.offset.y) / this.state.scale;
 
-                        // UPDATE CELL
-                        const i = Math.floor(adjustedY/cellHeight);
-                        const j = Math.floor(adjustedX/cellWidth);
-                        
-                        if (board[i][j]===0) board[i][j] = 1;
-                        else board[i][j] = 0;
-                        this.setState({adjustedX,adjustedY,board});
-                        socket.emit("updateCellBrush", roomId, i, j, this.state.currentBrushBoard);
-                    }}
-                    onMouseMove={(e)=>{
-                        const canvas = e.target;
-                        const rect = canvas.getBoundingClientRect();
-                        const canvasMouseX = e.clientX-rect.left;
-                        const canvasMouseY = e.clientY-rect.top;
-
-                        const { scale, offset } = this.state;
-
-                        const adjustedX = (canvasMouseX - offset.x) / scale;
-                        const adjustedY = (canvasMouseY - offset.y) / scale;
-
-
-                        // UPDATE CELL
-                        const i = Math.floor(adjustedY/cellHeight);
-                        const j = Math.floor(adjustedX/cellWidth);
-                        
-                        const brushBoard = this.state.currentBrushBoard;
-                        const brushHeight = brushBoard.length;
-                        const brushWidth = brushBoard[0].length;
-
-                        // Create a new hover range
-                        const newHoverRange = Array.from({ length: this.state.board.length }, () =>
-                            Array(this.state.board[0].length).fill(0)
-                        );
-
-                        // Update the hover range based on the brush dimensions and position
-                        for (let di = 0; di < brushHeight; di++) {
-                            for (let dj = 0; dj < brushWidth; dj++) {
-                                const boardI = i + di;
-                                const boardJ = j + dj;
-
-                                if (
-                                    boardI >= 0 &&
-                                    boardI < this.state.board.length &&
-                                    boardJ >= 0 &&
-                                    boardJ < this.state.board[0].length &&
-                                    brushBoard[di][dj] === 1 // Only highlight cells where the brush has a `1`
-                                ) {
-                                    newHoverRange[boardI][boardJ] = 1;
+                                    // UPDATE CELL
+                                    const i = Math.floor(adjustedY/cellHeight);
+                                    const j = Math.floor(adjustedX/cellWidth);
+                                    
+                                    if (board[i][j]===0) board[i][j] = 1;
+                                    else board[i][j] = 0;
+                                    this.setState({adjustedX,adjustedY,board});
+                                    socket.emit("updateCellBrush",roomId,i,j,this.state.currentBrushBoard);
                                 }
-                            }
-                        }
+                                this.setState({mouseIsDown:false,isDragging:false});
+                            }}
+                            onMouseMove={(e)=>{
+                                if (this.state.mouseIsDown) this.setState({isDragging:true});
+                                
+                                const canvas = e.target;
+                                const rect = canvas.getBoundingClientRect();
+                                const canvasMouseX = e.clientX-rect.left;
+                                const canvasMouseY = e.clientY-rect.top;
 
-                        // Only update the state if the hover range has changed
-                        if (JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverRange)) {
-                            this.setState({
-                                hoverRange: newHoverRange,
-                                canvasMouseX:adjustedX,
-                                canvasMouseY:adjustedY,
-                            });
-                        }
+                                const { scale,offset } = this.state;
 
-                    }}
-                    onTransformChange={this.handleTransformChange}
-                    ></GameCanvas>
-                    {/* <table className={"grid"}>
-                        <tbody>
-                            {board.map((row, i) => (
-                            <tr key={i}>
-                                {row.map((cell, j) => (
-                                <td
-                                    key={j}
-                                    className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
-                                        ${this.state.hoverPosition!==null 
-                                            && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
-                                    }`}
-                                    onClick={() => this.handleCellClick(i, j)}
-                                    onMouseOver={() => this.handleMouseOver(i, j)}
-                                    onMouseLeave={() => this.setState({ hoverPosition: null })}
-                                ></td>
-                                ))}
-                            </tr>
-                            ))}
-                        </tbody>
-                    </table> */}
-                    <br></br>
-                    <p>Iterations: <strong>{iterations}</strong></p>
-                    <br></br>
-                    <Container style={{width:"50%"}}>
-                        <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
-                        <Form.Range min={25} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
-                    </Container>
-                    <br></br>
-                    <Container className="d-flex" id="main-container">
-                        <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleToggleRun}>
-                            {isRunning ? "Pause" : "Play"}
-                        </Button>
-                        <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
-                            Step
-                        </Button>
-                        <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleReset}>
-                            Reset
-                        </Button>
-                    </Container>
-                    <br></br>
-                    <Container>
-                        <h3><u>Palette</u></h3>
-                        <h5>Defaults</h5>
-                        <Row>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Default",currentBrushBoard:[[1]]});
-                                }} selected={this.state.currentBrush==="Default"} darkMode={darkMode} title="1x1 Block" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0],[0,1,0],[0,0,0]]}></Brush>
-                            </Col>
-                        </Row>
-                        <h5>Still Lifes</h5>
-                        <Row>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1],[1,1]]});
-                                }} selected={this.state.currentBrush==="2x2"} darkMode={darkMode} title="2x2 Block" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Bee Hive",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,1,0]]});
-                                }} selected={this.state.currentBrush==="Bee Hive"} darkMode={darkMode} title="Bee Hive" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,1,0,0],[0,0,0,0,0,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Loaf",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,0,1],[0,0,1,0]]});
-                                }}  selected={this.state.currentBrush==="Loaf"} darkMode={darkMode} title="Loaf" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,0,1,0],[0,0,0,1,0,0],[0,0,0,0,0,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Boat",currentBrushBoard:[[1,1,0],[1,0,1],[0,1,0]]});
-                                }} selected={this.state.currentBrush==="Boat"} darkMode={darkMode} title="Boat" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0],[0,1,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Tub",currentBrushBoard:[[0,1,0],[1,0,1],[0,1,0]]});
-                                }} selected={this.state.currentBrush==="Tub"} darkMode={darkMode} title="Tub" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
-                            </Col>
-                        </Row>
-                        <h5>Oscillators</h5>
-                        <Row>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Blinker", currentBrushBoard:[[0,1,0],[0,1,0],[0,1,0]]});
-                                }} selected={this.state.currentBrush==="Blinker"} darkMode={darkMode} title="Blinker (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[0,1,0],[0,1,0],[0,1,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Toad", currentBrushBoard:[[0,0,1,1,1,0],[0,1,1,1,0,0]]});
-                                }} selected={this.state.currentBrush==="Toad"} darkMode={darkMode} title="Toad (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[0,0,1,1,1,0],[0,1,1,1,0,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Beacon", currentBrushBoard:[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]});
-                                }} selected={this.state.currentBrush==="Beacon"} darkMode={darkMode} title="Beacon (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Pulsar", 
-                                        currentBrushBoard:[
+                                const adjustedX = (canvasMouseX - offset.x) / scale;
+                                const adjustedY = (canvasMouseY - offset.y) / scale;
+
+
+                                // UPDATE CELL
+                                const i = Math.floor(adjustedY/cellHeight);
+                                const j = Math.floor(adjustedX/cellWidth);
+                                
+                                const brushBoard = this.state.currentBrushBoard;
+                                const brushHeight = brushBoard.length;
+                                const brushWidth = brushBoard[0].length;
+
+                                // Create a new hover range
+                                const newHoverRange = Array.from({ length: this.state.board.length },() =>
+                                    Array(this.state.board[0].length).fill(0)
+                                );
+
+                                for (let di = 0; di < brushHeight; di++) {
+                                    for (let dj = 0; dj < brushWidth; dj++) {
+                                        const boardI = i + di;
+                                        const boardJ = j + dj;
+
+                                        if (
+                                            boardI >= 0 &&
+                                            boardI < this.state.board.length &&
+                                            boardJ >= 0 &&
+                                            boardJ < this.state.board[0].length &&
+                                            brushBoard[di][dj] === 1
+                                        ) {
+                                            newHoverRange[boardI][boardJ] = 1;
+                                        }
+                                    }
+                                }
+
+                                // Only update the state if the hover range has changed
+                                if (JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverRange)) {
+                                    this.setState({
+                                        hoverRange: newHoverRange,
+                                        canvasMouseX:adjustedX,
+                                        canvasMouseY:adjustedY,
+                                    });
+                                }
+
+                            }}
+                            onTransformChange={this.handleTransformChange}
+                            ></GameCanvas>
+                            {/* <table className={"grid"}>
+                                <tbody>
+                                    {board.map((row,i) => (
+                                    <tr key={i}>
+                                        {row.map((cell,j) => (
+                                        <td
+                                            key={j}
+                                            className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
+                                                ${this.state.hoverPosition!==null 
+                                                    && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
+                                            }`}
+                                            onClick={() => this.handleCellClick(i,j)}
+                                            onMouseOver={() => this.handleMouseOver(i,j)}
+                                            onMouseLeave={() => this.setState({ hoverPosition: null })}
+                                        ></td>
+                                        ))}
+                                    </tr>
+                                    ))}
+                                </tbody>
+                            </table> */}
+                            <br></br>
+                            <p>Iterations: <strong>{iterations}</strong></p>
+                            <br></br>
+                            <Container style={{width:"50%"}}>
+                                <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
+                                <Form.Range min={25} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
+                            </Container>
+                            <br></br>
+                            <Container className="d-flex" id="main-container">
+                                <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleToggleRun}>
+                                    {isRunning ? "Pause" : "Play"}
+                                </Button>
+                                <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
+                                    Step
+                                </Button>
+                                <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleReset}>
+                                    Reset
+                                </Button>
+                            </Container>
+                            <br></br>
+                        </Col>
+                        <Col xl={4} lg={12} md={12} sm={12} xs={12} className="brush-preview-container">
+                            <Container>
+                            <Container className="d-flex flex-column justify-content-center align-items-center">
+                                <h4><u>Brush Preview</u></h4>
+                                <div style={{
+                                    borderRadius:"10px",
+                                    border:"2px solid white",
+                                    width:"max-content",
+                                    alignItems:"center",
+                                    padding:"15px"
+                                    }}>
+                                    <BrushPreview
+                                    darkMode={darkMode}
+                                    rotation={this.state.rotation}
+                                    currentBrushBoard={this.state.currentBrushBoard}
+                                    ></BrushPreview>
+                                </div>
+                                <hr style={{width:"50%"}}></hr>
+                                <h6>Rotation</h6>
+                                <Row className="mb-1">
+                                    <Col>
+                                        <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                            const matrix = this.state.currentBrushBoard;
+                                            this.setState({currentBrushBoard:this.rotateMatrixClockwise(matrix)});
+                                        }} variant="primary">↻</Button>
+                                    </Col>
+                                    <Col>
+                                        <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                            const matrix = this.state.currentBrushBoard;
+                                            this.setState({currentBrushBoard:this.rotateMatrixCounterClockwise(matrix)});
+                                        }} variant="primary">↺</Button>
+                                    </Col>
+                                </Row>
+                                <h6>Step</h6>
+                                {/* WIP - Coming soon!!! */}
+                                {/* <Row className="mb-1">
+                                    <Col>
+                                        <Button variant="primary">Prev</Button>
+                                    </Col>
+                                    <Col>
+                                        <Button variant="primary">Next</Button>
+                                    </Col>
+                                </Row> */}
+                            </Container>
+                                <h4><u>Palette</u></h4>
+                                <Row style={{display:brushPage===0 ? "flex" : "none"}}>
+                                    <h5>Defaults</h5>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Default",currentBrushBoard:[[1]]});
+                                        }} selected={this.state.currentBrush==="Default"} darkMode={darkMode} title="1x1 Block" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0],[0,1,0],[0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"2x2 Block",currentBrushBoard:[[1,1],[1,1]]});
+                                        }} selected={this.state.currentBrush==="2x2 Block"} darkMode={darkMode} title="2x2 Block" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"3x3 Block",currentBrushBoard:[[1,1,1],[1,1,1],[1,1,1]]});
+                                        }} selected={this.state.currentBrush==="3x3 Block"} darkMode={darkMode} title="3x3 Block" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0,0,0],[0,1,1,1,0],[0,1,1,1,0],[0,1,1,1,0],[0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Horizontal Line",currentBrushBoard:[[1,1,1,1,1]]});
+                                        }} selected={this.state.currentBrush==="Horizontal Line"} darkMode={darkMode} title="Horizontal Line" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0,0,0,0,0],[0,1,1,1,1,1,0],[0,0,0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Vertical Line",currentBrushBoard:[[1],[1],[1],[1],[1]]});
+                                        }} selected={this.state.currentBrush==="Vertical Line"} darkMode={darkMode} title="Vertical Line" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Cross",currentBrushBoard:[[0,1,0],[1,1,1],[0,1,0]]});
+                                        }} selected={this.state.currentBrush==="Cross"} darkMode={darkMode} title="Cross" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,1,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                </Row>
+                                <Row style={{display:brushPage===1 ? "flex" : "none"}}>
+                                    <h5>Still Lifes</h5>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"2x2",currentBrushBoard:[[1,1],[1,1]]});
+                                        }} selected={this.state.currentBrush==="2x2"} darkMode={darkMode} title="2x2 Block" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Bee Hive",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,1,0]]});
+                                        }} selected={this.state.currentBrush==="Bee Hive"} darkMode={darkMode} title="Bee Hive" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Loaf",currentBrushBoard:[[0,1,1,0],[1,0,0,1],[0,1,0,1],[0,0,1,0]]});
+                                        }}  selected={this.state.currentBrush==="Loaf"} darkMode={darkMode} title="Loaf" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0,0],[0,0,1,1,0,0],[0,1,0,0,1,0],[0,0,1,0,1,0],[0,0,0,1,0,0],[0,0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Boat",currentBrushBoard:[[1,1,0],[1,0,1],[0,1,0]]});
+                                        }} selected={this.state.currentBrush==="Boat"} darkMode={darkMode} title="Boat" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0],[0,1,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Tub",currentBrushBoard:[[0,1,0],[1,0,1],[0,1,0]]});
+                                        }} selected={this.state.currentBrush==="Tub"} darkMode={darkMode} title="Tub" color={darkMode ? "#333300" : "#ffffcc"} borderColor={darkMode ? "#ffff47" : "#b8b800"} board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                </Row>
+                                <Row style={{display:brushPage===2 ? "flex" : "none"}}>
+                                    <h5>Oscillators</h5>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Blinker",currentBrushBoard:[[0,1,0],[0,1,0],[0,1,0]]});
+                                        }} selected={this.state.currentBrush==="Blinker"} darkMode={darkMode} title="Blinker (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[0,1,0],[0,1,0],[0,1,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Toad",currentBrushBoard:[[0,0,1,1,1,0],[0,1,1,1,0,0]]});
+                                        }} selected={this.state.currentBrush==="Toad"} darkMode={darkMode} title="Toad (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[0,0,1,1,1,0],[0,1,1,1,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Beacon",currentBrushBoard:[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]});
+                                        }} selected={this.state.currentBrush==="Beacon"} darkMode={darkMode} title="Beacon (period 2)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[[1,1,0,0],[1,0,0,0],[0,0,0,1],[0,0,1,1]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Pulsar",
+                                                currentBrushBoard:[
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                ]});
+                                        }} selected={this.state.currentBrush==="Pulsar"} darkMode={darkMode} title="Pulsar (period 3)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                             [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -690,102 +831,129 @@ export class Game extends React.Component {
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                             [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                        ]});
-                                }} selected={this.state.currentBrush==="Pulsar"} darkMode={darkMode} title="Pulsar (period 3)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                    [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                ]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Penta Decathlon", currentBrushBoard:[
-                                        [0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,1,1,1,0,0,0],
-                                        [0,0,1,0,0,0,1,0,0],
-                                        [0,0,1,0,0,0,1,0,0],
-                                        [0,0,0,1,1,1,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,1,1,1,0,0,0],
-                                        [0,0,1,0,0,0,1,0,0],
-                                        [0,0,1,0,0,0,1,0,0],
-                                        [0,0,0,1,1,1,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0],
-                                    ]});
-                                }} selected={this.state.currentBrush==="Penta Decathlon"} darkMode={darkMode} title="Penta Decathlon (period 15)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[
-                                    [0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,1,1,1,0,0,0],
-                                    [0,0,1,0,0,0,1,0,0],
-                                    [0,0,1,0,0,0,1,0,0],
-                                    [0,0,0,1,1,1,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,1,1,1,0,0,0],
-                                    [0,0,1,0,0,0,1,0,0],
-                                    [0,0,1,0,0,0,1,0,0],
-                                    [0,0,0,1,1,1,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0],
-                                ]}></Brush>
-                            </Col>
-                        </Row>
-                        <h5>Spaceships</h5>
-                        <Row>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Glider",currentBrushBoard:[[0,1,0],[0,0,1],[1,1,1]]});
-                                }} selected={this.state.currentBrush==="Glider"} darkMode={darkMode} title="Glider" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,0],[0,0,1],[1,1,1]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"LWSS",currentBrushBoard:[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]});
-                                }} selected={this.state.currentBrush==="LWSS"} darkMode={darkMode} title="Light-weight Spaceship (LWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"MWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
-                                }} selected={this.state.currentBrush==="MWSS"} darkMode={darkMode} title="Middle-weight Spaceship (MWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"HWSS",currentBrushBoard:[
-                                        [0,1,1,1,1,1,1],
-                                        [1,0,0,0,0,0,1],
-                                        [0,0,0,0,0,0,1],
-                                        [1,0,0,0,0,1,0],
-                                        [0,0,1,1,0,0,0]
-                                    ]});
-                                }} selected={this.state.currentBrush==="HWSS"} darkMode={darkMode} title="Heavy-weight Spaceship (HWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[
-                                    [0,1,1,1,1,1,1],
-                                    [1,0,0,0,0,0,1],
-                                    [0,0,0,0,0,0,1],
-                                    [1,0,0,0,0,1,0],
-                                    [0,0,1,1,0,0,0]
-                                ]}></Brush>
-                            </Col>
-                        </Row>
-                        <h5>Perpetual Patterns</h5>
-                        <Row>
-                            <Col>
-                            <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Gosper Glider Gun", 
-                                        currentBrushBoard:[
+                                        ]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Penta Decathlon",currentBrushBoard:[
+                                                [0,0,0,0,0,0,0,0,0],
+                                                [0,0,0,1,1,1,0,0,0],
+                                                [0,0,1,0,0,0,1,0,0],
+                                                [0,0,1,0,0,0,1,0,0],
+                                                [0,0,0,1,1,1,0,0,0],
+                                                [0,0,0,0,0,0,0,0,0],
+                                                [0,0,0,0,0,0,0,0,0],
+                                                [0,0,0,0,0,0,0,0,0],
+                                                [0,0,0,0,0,0,0,0,0],
+                                                [0,0,0,1,1,1,0,0,0],
+                                                [0,0,1,0,0,0,1,0,0],
+                                                [0,0,1,0,0,0,1,0,0],
+                                                [0,0,0,1,1,1,0,0,0],
+                                                [0,0,0,0,0,0,0,0,0],
+                                            ]});
+                                        }} selected={this.state.currentBrush==="Penta Decathlon"} darkMode={darkMode} title="Penta Decathlon (period 15)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[
+                                            [0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,1,1,1,0,0,0],
+                                            [0,0,1,0,0,0,1,0,0],
+                                            [0,0,1,0,0,0,1,0,0],
+                                            [0,0,0,1,1,1,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,1,1,1,0,0,0],
+                                            [0,0,1,0,0,0,1,0,0],
+                                            [0,0,1,0,0,0,1,0,0],
+                                            [0,0,0,1,1,1,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0],
+                                        ]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"101",currentBrushBoard:[
+                                                [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0],
+                                                [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                                [0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                                [1,1,0,1,1,0,0,1,1,1,1,0,0,1,1,0,1,1],
+                                                [1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1],
+                                                [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                                [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                                [1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1],
+                                                [1,1,0,1,1,0,0,1,1,1,1,0,0,1,1,0,1,1],
+                                                [0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                                [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                                [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0],
+                                            ]});
+                                        }} selected={this.state.currentBrush==="101"} darkMode={darkMode} title="101 (Period 5)" color={darkMode ? "#331200" : "#ffdecc"} borderColor={darkMode ? "#ff8847" : "#b84100"} board={[
+                                            [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0],
+                                            [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                            [0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                            [1,1,0,1,1,0,0,1,1,1,1,0,0,1,1,0,1,1],
+                                            [1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1],
+                                            [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                            [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                            [1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1],
+                                            [1,1,0,1,1,0,0,1,1,1,1,0,0,1,1,0,1,1],
+                                            [0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                            [0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0],
+                                            [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0],
+                                        ]}></Brush>
+                                    </Col>
+                                </Row>
+                                <Row style={{display:brushPage===3 ? "flex" : "none"}}>
+                                    <h5>Spaceships</h5>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Glider",currentBrushBoard:[[0,1,0],[0,0,1],[1,1,1]]});
+                                        }} selected={this.state.currentBrush==="Glider"} darkMode={darkMode} title="Glider" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,0],[0,0,1],[1,1,1]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"LWSS",currentBrushBoard:[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]});
+                                        }} selected={this.state.currentBrush==="LWSS"} darkMode={darkMode} title="Light-weight Spaceship (LWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1],[1,0,0,0,1],[0,0,0,0,1],[1,0,0,1,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"MWSS",currentBrushBoard:[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]});
+                                        }} selected={this.state.currentBrush==="MWSS"} darkMode={darkMode} title="Middle-weight Spaceship (MWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[[0,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,0,0,1],[1,0,0,0,1,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"HWSS",currentBrushBoard:[
+                                                [0,1,1,1,1,1,1],
+                                                [1,0,0,0,0,0,1],
+                                                [0,0,0,0,0,0,1],
+                                                [1,0,0,0,0,1,0],
+                                                [0,0,1,1,0,0,0]
+                                            ]});
+                                        }} selected={this.state.currentBrush==="HWSS"} darkMode={darkMode} title="Heavy-weight Spaceship (HWSS)" color={darkMode ? "#001233" : "#ccdeff"} borderColor={darkMode ? "#4788ff" : "#0041b8"} board={[
+                                            [0,1,1,1,1,1,1],
+                                            [1,0,0,0,0,0,1],
+                                            [0,0,0,0,0,0,1],
+                                            [1,0,0,0,0,1,0],
+                                            [0,0,1,1,0,0,0]
+                                        ]}></Brush>
+                                    </Col>
+                                </Row>
+                                <Row style={{display:brushPage===4 ? "flex" : "none"}}>
+                                    <h5>Perpetual Patterns</h5>
+                                    <Col xs={6} sm={6} md={6} lg={6}>
+                                    <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Gosper Glider Gun",
+                                                currentBrushBoard:[
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
+                                                    [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                                                ]});
+                                        }} selected={this.state.currentBrush==="Gosper Glider Gun"} darkMode={darkMode} title="Gosper Glider Gun" color={darkMode ? "#110033" : "#ddccff"} borderColor={darkMode ? "#8547ff" : "#3d00b8"} board={[
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -797,45 +965,270 @@ export class Game extends React.Component {
                                             [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-                                        ]});
-                                }} selected={this.state.currentBrush==="Gosper Glider Gun"} darkMode={darkMode} title="Gosper Glider Gun" color={darkMode ? "#110033" : "#ddccff"} borderColor={darkMode ? "#8547ff" : "#3d00b8"} board={[
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0],
-                                    [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-                                ]}></Brush>
-                            </Col>
-                            <Col>
-                                <Brush onClick={()=>{
-                                    this.setState({currentBrush:"Block-Laying Switch Engine",currentBrushBoard:[
-                                        [0,0,0,0,0,0,1,0],
-                                        [0,0,0,0,1,0,1,1],
-                                        [0,0,0,0,1,0,1,0],
-                                        [0,0,0,0,1,0,0,0],
-                                        [0,0,1,0,0,0,0,0],
-                                        [1,0,1,0,0,0,0,0]
-                                    ]});
-                                }} selected={this.state.currentBrush==="Block-Laying Switch Engine"} darkMode={darkMode} title="Block-Laying Switch Engine" color={darkMode ? "#110033" : "#ddccff"} borderColor={darkMode ? "#8547ff" : "#3d00b8"} board={[
-                                    [0,0,0,0,0,0,1,0],
-                                    [0,0,0,0,1,0,1,1],
-                                    [0,0,0,0,1,0,1,0],
-                                    [0,0,0,0,1,0,0,0],
-                                    [0,0,1,0,0,0,0,0],
-                                    [1,0,1,0,0,0,0,0]
-                                ]}></Brush>
-                            </Col>
-                        </Row>
-                    </Container>
+                                        ]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Block-Laying Switch Engine",currentBrushBoard:[
+                                                [0,0,0,0,0,0,1,0],
+                                                [0,0,0,0,1,0,1,1],
+                                                [0,0,0,0,1,0,1,0],
+                                                [0,0,0,0,1,0,0,0],
+                                                [0,0,1,0,0,0,0,0],
+                                                [1,0,1,0,0,0,0,0]
+                                            ]});
+                                        }} selected={this.state.currentBrush==="Block-Laying Switch Engine"} darkMode={darkMode} title="Block-Laying Switch Engine" color={darkMode ? "#110033" : "#ddccff"} borderColor={darkMode ? "#8547ff" : "#3d00b8"} board={[
+                                            [0,0,0,0,0,0,1,0],
+                                            [0,0,0,0,1,0,1,1],
+                                            [0,0,0,0,1,0,1,0],
+                                            [0,0,0,0,1,0,0,0],
+                                            [0,0,1,0,0,0,0,0],
+                                            [1,0,1,0,0,0,0,0]
+                                        ]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={6} md={6} lg={6}>
+                                        <Brush
+                                        onClick={() => {
+                                            this.setState({
+                                                currentBrush: "Simkin Glider Gun",
+                                                currentBrushBoard: [
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,1,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                                                ],
+                                            });
+                                        }}
+                                        selected={this.state.currentBrush === "Simkin Glider Gun"}
+                                        darkMode={darkMode}
+                                        title="Simkin Glider Gun"
+                                        color={darkMode ? "#110033" : "#ddccff"}
+                                        borderColor={darkMode ? "#8547ff" : "#3d00b8"}
+                                        board={[
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,1,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                                        ]}
+                                    ></Brush>
+                                    </Col>
+                                </Row>
+                                <Row style={{display:brushPage===5 ? "flex" : "none"}}>
+                                    <h5>Others</h5>
+                                    <Col xs={6}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Handshake",currentBrushBoard:[
+                                                [0,0,1,1,0],
+                                                [0,1,0,1,1],
+                                                [1,1,0,1,0],
+                                                [0,1,1,0,0]
+                                            ]});
+                                        }} selected={this.state.currentBrush==="Handshake"} darkMode={darkMode} title="Handshake" color={darkMode ? "#5a005c" : "#feccff"} borderColor={darkMode ? "#feccff" : "#5a005c"} board={[
+                                            [0,0,1,1,0],
+                                            [0,1,0,1,1],
+                                            [1,1,0,1,0],
+                                            [0,1,1,0,0]
+                                        ]}></Brush>
+                                    </Col>
+                                    <Col xs={6}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"Pi Heptomino",currentBrushBoard:[
+                                                [1,1,1],
+                                                [1,0,1],
+                                                [1,0,1],
+                                            ]});
+                                        }} selected={this.state.currentBrush==="Pi Heptomino"} darkMode={darkMode} title="Pi Heptomino" color={darkMode ? "#5a005c" : "#feccff"} borderColor={darkMode ? "#feccff" : "#5a005c"} board={[
+                                            [1,1,1],
+                                                [1,0,1],
+                                                [1,0,1],
+                                        ]}></Brush>
+                                    </Col>
+                                    <Col xs={12}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"295P5H1V1",currentBrushBoard:
+                                                [[0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,0,0,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,1,1,0,0,1,1,0,0,0,1,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,0,1,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,0,0,0,1,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,1,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,1,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,1,0,1,0,0,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,1,0,0,1,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,1,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,1,1,0,1,0,0,1,1,0,0,0,1,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,1],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,1,0,0,1,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0]]});
+                                        }} selected={this.state.currentBrush==="295P5H1V1"} darkMode={darkMode} title="295P5H1V1" color={darkMode ? "#5a005c" : "#feccff"} borderColor={darkMode ? "#feccff" : "#5a005c"} board={
+                                            [[0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,0,0,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,1,1,0,0,1,1,0,0,0,1,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,0,1,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,0,0,0,1,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,1,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,1,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,1,0,1,0,0,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,1,0,0,1,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,1,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,1,1,0,1,0,0,1,1,0,0,0,1,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,1],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,1,0,0,1,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                </Row>
+                            </Container>
+                            {/* PAGINATION */}
+                            <Container>
+                                <div style={{justifyContent:"space-evenly"}} className="d-flex">
+                                {/* Previous Button */}
+                                <Button
+                                    className={darkMode ? "dark" : ""}
+                                    variant="primary"
+                                    onClick={() => {
+                                        this.setState({ brushPage: brushPage === 0 ? brushPageNames.length - 1 : brushPage - 1 });
+                                    }}
+                                >
+                                    {brushPage === 0 ? `< Prev (${brushPageNames[brushPageNames.length - 1]})` : `< Prev (${brushPageNames[brushPage - 1]})`}
+                                </Button>
+
+                                {/* Next Button */}
+                                <Button
+                                    className={darkMode ? "dark" : ""}
+                                    variant="primary"
+                                    onClick={() => {
+                                        this.setState({ brushPage: brushPage === brushPageNames.length - 1 ? 0 : brushPage + 1 });
+                                    }}
+                                >
+                                    {brushPage === brushPageNames.length - 1 ? `Next (${brushPageNames[0]}) >` : `Next (${brushPageNames[brushPage + 1]}) >`}
+                                </Button>
+                            </div>
+                            </Container>
+                        </Col>
+                    </Row>
+                    <br></br>
                 </div>
                 )}
             </main>
+            <footer className={darkMode ? "dark" : ""}>
+                <div className="d-flex justify-content-center">
+                    <p>Created by <a className={darkMode ? "dark" : ""} href="https://github.com/pixelhypercube" target="_blank" rel="noopener noreferrer">pixelhypercube</a></p>
+                </div>
+            </footer>
         </div>
     );
   }

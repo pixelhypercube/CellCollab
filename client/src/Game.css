@@ -1,3 +1,20 @@
+.game-canvas-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  max-width:900px;
+}
+
+.brush-preview-container {
+  flex-shrink: 0; 
+}
+
+@media (max-width: 768px) {
+  .game-canvas-container, .brush-preview-container {
+      max-width: 100%;
+  }
+}
+
 /* LIGHT MODE */
 main {
   height:100%;
@@ -8,6 +25,13 @@ header {
   margin-bottom:20px;
   background:rgb(177, 177, 177);
 }
+
+footer {
+  padding:2%;
+  margin-top: 2%;
+  background:rgb(177, 177, 177);
+}
+
 
 #toggle-light-dark {
   width:36px;
@@ -89,6 +113,7 @@ table.grid {
   background:rgb(202, 202, 202);
   padding:30px;
   border-radius:20px;
+  margin-bottom: 25vh;
 }
 
 /* additional options section (join room container) */
@@ -129,12 +154,24 @@ header.dark {
   background: rgb(40, 40, 40);
 }
 
+footer.dark {
+  background:rgb(40, 40, 40);
+}
+
 #toggle-light-dark.dark {
   width:36px;
   height:36px;
   font-size:20px;
   border:1px solid rgb(255, 255, 255);
   border-radius:20px;
+}
+
+/* alert */
+.alert-danger.dark {
+  --bs-alert-color: #f8d7da; /* Light red text for better contrast */
+  --bs-alert-bg: #842029;   /* Dark red background */
+  --bs-alert-border-color: #f5c2c7; /* Subtle border color */
+  --bs-alert-link-color: #f8d7da; /* Light red link color */
 }
 
 /* main container */

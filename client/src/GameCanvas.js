@@ -148,7 +148,9 @@ export default class GameCanvas extends React.Component {
             <canvas onMouseMove={this.props.onMouseMove} 
             style={{border:`2px solid ${darkMode ? `white` : `black`}`}} 
             // onWheel={this.handleWheel}
+            onMouseDown={this.props.onMouseDown}
             onClick={this.props.onClick} 
+            onMouseUp={this.props.onMouseUp}
             width={canvasWidth} 
             height={canvasHeight} 
             ref={this.canvasRef}></canvas>
