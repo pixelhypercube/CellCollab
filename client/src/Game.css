@@ -88,11 +88,11 @@ table.grid {
 }
 
 .alive {
-  background-color: black;
+  background-color: black !important;
 }
 
 .dead {
-  background-color: white;
+  background-color: white !important;
 }
 
 .hover {
@@ -189,11 +189,11 @@ footer.dark {
 }
 
 .alive.dark {
-  background-color: white;
+  background-color: white !important;
 }
 
 .dead.dark {
-  background-color: black;
+  background-color: black !important;
 }
 
 .hover.dark {

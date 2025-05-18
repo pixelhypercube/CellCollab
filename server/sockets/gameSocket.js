@@ -13,13 +13,21 @@ module.exports = function(io) {
         const raw = `${socketId}-${timestamp}-${random}`;
         return crypto.createHash('sha256').update(raw).digest('hex').slice(0, 8); // 8-char room ID
     };
+
+    const generateRandomUsername = () => {
+        const adjectives = ["Quick", "Lazy", "Happy", "Sad", "Angry", "Excited", "Bored"];
+        const nouns = ["Fox", "Dog", "Cat", "Bird", "Fish", "Lion", "Tiger"];
+        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+        return `${randomAdjective}${randomNoun}${Math.floor(Math.random() * 100)}`;
+    }
     
     const DEFAULT_WIDTH = 100, DEFAULT_HEIGHT = 100;
     const DEFAULT_SPEED = 100; // speed (ms)
     io.on('connection', (socket) => {
         console.log(`Client connected: ${socket.id}`);
 
-        socket.on('joinRoom', (roomId) => {
+        socket.on('joinRoom', (roomId,username) => {
             if (roomId === "" || roomId.length == 0) {
                 roomId = generateRoomId(roomId);
                 if (!rooms[roomId]) {
@@ -41,6 +49,9 @@ module.exports = function(io) {
                 socket.emit("hashedRoomId", roomId);
                 socket.emit("boardDims",boardHeight,boardWidth);
                 socket.emit("speed",rooms[roomId].speed);
+
+                // username joined
+                io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username); 
             }
             else {
                 if (!rooms[roomId]) socket.emit("roomExists",roomId,false);
@@ -55,11 +66,14 @@ module.exports = function(io) {
                     socket.emit("hashedRoomId", roomId);
                     socket.emit("boardDims",boardHeight,boardWidth);
                     socket.emit("speed",rooms[roomId].speed);
+
+                    // username joined
+                    io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username);
                 }
             }
         });
 
-        socket.on('joinRoomWithSettings', (roomId, width, height) => {
+        socket.on('joinRoomWithSettings', (roomId, width, height, speed, username) => {
             if (roomId === "" || roomId.length == 0) {
                 roomId = generateRoomId(roomId);
                 if (!rooms[roomId]) {
@@ -67,7 +81,7 @@ module.exports = function(io) {
                         board: initBoard(height, width, false),
                         isRunning: false,
                         intervalId: null,
-                        speed: DEFAULT_SPEED,
+                        speed:speed,
                         iterations: 0,
                     };
                     let board = rooms[roomId].board;
@@ -81,6 +95,9 @@ module.exports = function(io) {
                     socket.emit("boardDims",boardHeight,boardWidth);
                     socket.emit("speed",rooms[roomId].speed);
                     socket.emit("iterations",rooms[roomId].iterations);
+
+                    // username joined
+                    io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username);
                 } else {
                     if (rooms[roomId].board) {
                         // check whether to resize board or not
@@ -97,15 +114,17 @@ module.exports = function(io) {
                         socket.emit("status", rooms[roomId].isRunning);
                         socket.emit("hashedRoomId", roomId);
                         socket.emit("boardDims",height,width);
-                        socket.emit("speed",rooms[roomId].speed);
+                        socket.emit("speed",speed);
                         socket.emit("iterations",rooms[roomId].iterations);
+
+                        // username joined
+                        io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username);
                     }
                 }
             }
             else {
                 if (!rooms[roomId]) socket.emit("roomExists",roomId,false);
                 else {
-
                     if (rooms[roomId].board) {
                         // check whether to resize board or not
                         let board = rooms[roomId].board;
@@ -121,8 +140,11 @@ module.exports = function(io) {
                         socket.emit("status", rooms[roomId].isRunning);
                         socket.emit("hashedRoomId", roomId);
                         socket.emit("boardDims",height,width);
-                        socket.emit("speed",rooms[roomId].speed);
+                        socket.emit("speed",speed);
                         socket.emit("iterations",rooms[roomId].iterations);
+
+                        // username joined
+                        io.to(roomId).emit("userJoin", username);
                     }
                 }
             } 

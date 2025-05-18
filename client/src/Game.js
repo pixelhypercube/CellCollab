@@ -18,9 +18,10 @@ export class Game extends React.Component {
             isRunning: false,
             roomId: "",
             additionalOptionsEnabled:false,
-            boardWidth: null,
-            boardHeight: null,
+            boardWidth: 100,
+            boardHeight: 100,
             isJoined: false,
+            username:"",
             currentBrush:"Default",// brush
             currentBrushBoard:[[1]],
             hoverPosition: null,
@@ -102,6 +103,22 @@ export class Game extends React.Component {
             });
         });
 
+        socket.on("speed",(speed) => {
+            this.setState({speed});
+        });
+
+        // user join/leave
+
+        socket.on("userJoin",(username) => {
+            Swal.fire({
+                toast:true,
+                position:"bottom-end",
+                title:`${username} joined the room!`,
+                icon:"success",
+                timer:3000,
+            });
+        });
+
         // dark mode detection
         this.darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         this.setState({ darkMode: this.darkModeMediaQuery.matches });
@@ -158,6 +175,10 @@ export class Game extends React.Component {
         this.setState({ roomId: e.target.value });
     };
 
+    handleUsernameChange = (e) => {
+        this.setState({ username: e.target.value });
+    };
+
     handleWidthChange = (e) => {
         const newWidth = Number(e.target.value);
         this.setState({
@@ -181,16 +202,20 @@ export class Game extends React.Component {
     }
 
     handleJoinRoom = () => {
-        const { roomId,boardWidth,boardHeight } = this.state;
+        const { roomId,boardWidth,boardHeight,speed,username } = this.state;
         // if there's roomid
         if (roomId) {
             // check if room exists
 
             if (this.state.additionalOptionsEnabled) {
-                if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
-                    socket.emit("joinRoomWithSettings",roomId,boardWidth,boardHeight);
+                if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight) && !this.isInvalidSize(speed)) {
+                    socket.emit("joinRoomWithSettings",roomId,boardWidth,boardHeight,speed,username);
                     this.setState({ 
                         hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
+                        boardWidth,
+                        boardHeight,
+                        speed,
+                        username,
                     });
                 } else {
                     if (this.isInvalidSize(boardWidth)) {
@@ -234,21 +259,47 @@ export class Game extends React.Component {
                             }
                         });
                     }
+                    if (this.isInvalidSize(speed)) {
+                        MySwal.fire({
+                            toast: true,
+                            title: speed === null ? "Please enter a speed" : "Speed has to be greater than 0 ms!",
+                            timer: 2000,
+                            timerProgressBar: true,
+                            icon: "warning",
+                            didOpen: () => {
+                                const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                                if (popup) {
+                                    popup.style.width = '200px';
+                                    popup.style.fontSize = '14px';
+                                    popup.style.left = "75px";
+                                    popup.style.top = "200px";
+                                }
+                                const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                                if (popupTitle) popupTitle.style.margin = "0px 1em";
+                            }
+                        });
+                    }
                 }
             } else {
-                socket.emit("joinRoom",roomId);
+                socket.emit("joinRoom",roomId,username);
                 this.setState({ 
                     boardWidth: 100,
                     boardHeight: 100,
+                    speed: 100,
+                    username,
                     hoverRange: Array.from({ length: 100 },() => Array(100).fill(0))
                 });
             }
         } else { // without roomId
             if (this.state.additionalOptionsEnabled) {
-                if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight)) {
-                    socket.emit("joinRoomWithSettings","",boardWidth,boardHeight);
+                if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight) && !this.isInvalidSize(speed)) {
+                    socket.emit("joinRoomWithSettings","",boardWidth,boardHeight,speed,username);
                     this.setState({ 
                         hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
+                        boardWidth,
+                        boardHeight,
+                        speed,
+                        username,
                     });
                 } else {
                     if (this.isInvalidSize(boardWidth)) {
@@ -292,12 +343,34 @@ export class Game extends React.Component {
                             }
                         });
                     }
+                    if (this.isInvalidSize(speed)) {
+                        MySwal.fire({
+                            toast: true,
+                            title: speed === null ? "Please enter a speed" : "Speed has to be greater than 0 ms!",
+                            timer: 2000,
+                            timerProgressBar: true,
+                            icon: "warning",
+                            didOpen: () => {
+                                const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
+                                if (popup) {
+                                    popup.style.width = '200px';
+                                    popup.style.fontSize = '14px';
+                                    popup.style.left = "75px";
+                                    popup.style.top = "200px";
+                                }
+                                const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
+                                if (popupTitle) popupTitle.style.margin = "0px 1em";
+                            }
+                        });
+                    }
                 }
             } else {
-                socket.emit("joinRoom","");
+                socket.emit("joinRoom","",username);
                 this.setState({ 
                     boardWidth: 100,
                     boardHeight: 100,
+                    speed:100,
+                    username,
                     hoverRange: Array.from({ length: 100 },() => Array(100).fill(0))
                 });
             }
@@ -453,7 +526,7 @@ export class Game extends React.Component {
     }
 
     render() {
-    const { additionalOptionsEnabled,board,isRunning,roomId,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames } = this.state;
+    const { additionalOptionsEnabled,board,isRunning,username,roomId,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames } = this.state;
 
     return (
         <div>
@@ -470,12 +543,22 @@ export class Game extends React.Component {
                         <h4><u>Join/Create a Room</u></h4>
                         <Form>
                             <Form.Group controlId="formRoomId">
-                            <Form.Label style={{textAlign:"left"}} className="w-100">Room ID (Leave blank to create a new room):</Form.Label>
+                                <Form.Label style={{textAlign:"left"}} className="w-100">Room ID (Leave blank to create a new room):</Form.Label>
                                 <Form.Control
                                 type="text"
                                 value={roomId}
                                 onChange={this.handleRoomChange}
                                 placeholder="Room ID"
+                                />
+                            </Form.Group>
+                            <br></br>
+                            <Form.Group controlId="formUserName">
+                                <Form.Label style={{textAlign:"left"}} className="w-100">Username (Optional):</Form.Label>
+                                <Form.Control
+                                type="text"
+                                value={username}
+                                onChange={this.handleUsernameChange}
+                                placeholder="Username"
                                 />
                             </Form.Group>
                             <br></br>
@@ -498,7 +581,7 @@ export class Game extends React.Component {
                                     ><strong>WARNING:</strong> Changing the size of an existing board may alter its layout and content. Please proceed with caution to avoid unintended changes.
                                     </Alert>
                                     <Row id="additional-options">
-                                        <Col>
+                                        <Col xs={6}>
                                             <Form.Group controlId="formBoardWidth">
                                                 <Form.Label style={{textAlign:"left"}} className="w-100">Board Width (cells)</Form.Label>
                                                 <Form.Control
@@ -510,7 +593,7 @@ export class Game extends React.Component {
                                                 />
                                             </Form.Group>
                                         </Col>
-                                        <Col>
+                                        <Col xs={6}>
                                             <Form.Group controlId="formBoardHeight">
                                                 <Form.Label style={{textAlign:"left"}} className="w-100">Board Height (cells)</Form.Label>
                                                 <Form.Control
@@ -520,6 +603,13 @@ export class Game extends React.Component {
                                                 // min="10"
                                                 // max="50"
                                                 />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col xs={12}>
+                                            <br></br>
+                                            <Form.Group controlId="formBoardSpeed">
+                                                <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
+                                                <Form.Range min={10} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
                                             </Form.Group>
                                         </Col>
                                     </Row>
@@ -652,11 +742,11 @@ export class Game extends React.Component {
                                 </tbody>
                             </table> */}
                             <br></br>
-                            <p>Iterations: <strong>{iterations}</strong></p>
+                            <p>Iterations: <strong>{iterations}</strong>, Population: <strong>{board.flat().reduce((a,b)=>a+b,0)}</strong></p>
                             <br></br>
                             <Container style={{width:"50%"}}>
                                 <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
-                                <Form.Range min={25} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
+                                <Form.Range min={10} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
                             </Container>
                             <br></br>
                             <Container className="d-flex" id="main-container">
@@ -748,6 +838,30 @@ export class Game extends React.Component {
                                         <Brush onClick={()=>{
                                             this.setState({currentBrush:"Cross",currentBrushBoard:[[0,1,0],[1,1,1],[0,1,0]]});
                                         }} selected={this.state.currentBrush==="Cross"} darkMode={darkMode} title="Cross" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[[0,0,0,0,0],[0,0,1,0,0],[0,1,1,1,0],[0,0,1,0,0],[0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col xs={6} sm={4} md={3} lg={3}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"X Cross",currentBrushBoard:[
+                                                [1,0,0,0,0,0,0,0,1],
+                                                [0,1,0,0,0,0,0,1,0],
+                                                [0,0,1,0,0,0,1,0,0],
+                                                [0,0,0,1,0,1,0,0,0],
+                                                [0,0,0,0,1,0,0,0,0],
+                                                [0,0,0,1,0,1,0,0,0],
+                                                [0,0,1,0,0,0,1,0,0],
+                                                [0,1,0,0,0,0,0,1,0],
+                                                [1,0,0,0,0,0,0,0,1]]});
+                                        }} selected={this.state.currentBrush==="X Cross"} darkMode={darkMode} title="X Cross" color={darkMode ? "#013c01" : "#ccffcc"} borderColor={darkMode ? "#95ff95" : "#00b800"} board={[
+                                            [1,0,0,0,0,0,0,0,1],
+                                            [0,1,0,0,0,0,0,1,0],
+                                            [0,0,1,0,0,0,1,0,0],
+                                            [0,0,0,1,0,1,0,0,0],
+                                            [0,0,0,0,1,0,0,0,0],
+                                            [0,0,0,1,0,1,0,0,0],
+                                            [0,0,1,0,0,0,1,0,0],
+                                            [0,1,0,0,0,0,0,1,0],
+                                            [1,0,0,0,0,0,0,0,1]
+                                        ]}></Brush>
                                     </Col>
                                 </Row>
                                 <Row style={{display:brushPage===1 ? "flex" : "none"}}>
@@ -1189,6 +1303,91 @@ export class Game extends React.Component {
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0]]}></Brush>
+                                    </Col>
+                                    <Col>
+                                    <Brush onClick={()=>{
+                                        this.setState({currentBrush:"X Cross (39x39)",currentBrushBoard:[
+                                            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                            [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+                                            [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
+                                            [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                            [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+                                            [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],
+                                            [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],
+                                            [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],
+                                            [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+                                            [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                            [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
+                                            [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+                                            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                        ]});
+                                        }} selected={this.state.currentBrush==="X Cross (39x39)"} darkMode={darkMode} title="X Cross (39x39)" color={darkMode ? "#5a005c" : "#feccff"} borderColor={darkMode ? "#feccff" : "#5a005c"} board={[
+                                            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                            [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+                                            [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
+                                            [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                            [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+                                            [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],
+                                            [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+                                            [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],
+                                            [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],
+                                            [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+                                            [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+                                            [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
+                                            [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+                                            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                        ]}></Brush>
                                     </Col>
                                 </Row>
                             </Container>
