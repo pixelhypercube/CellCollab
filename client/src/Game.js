@@ -15,6 +15,7 @@ export class Game extends React.Component {
         super(props);
         this.state = {
             board: [],
+            playerSocketId:"",
             isRunning: false,
             roomId: "",
             additionalOptionsEnabled:false,
@@ -26,6 +27,7 @@ export class Game extends React.Component {
             currentBrushBoard:[[1]],
             hoverPosition: null,
             hoverRange: [],
+            activePlayers: [],
             fadeOut:false,
             darkMode:true,
             iterations:0,
@@ -109,7 +111,7 @@ export class Game extends React.Component {
 
         // user join/leave
 
-        socket.on("userJoin",(username) => {
+        socket.on("userJoin",(username,activePlayers) => {
             Swal.fire({
                 toast:true,
                 position:"bottom-end",
@@ -117,6 +119,27 @@ export class Game extends React.Component {
                 icon:"success",
                 timer:3000,
             });
+            this.setState({activePlayers});
+        });
+
+        socket.on("selfJoined",({playerSocketId,username})=>{
+            this.setState({playerSocketId,username});
+        });
+
+        socket.on("userLeave",(activePlayers,username)=>{
+            Swal.fire({
+                toast:true,
+                position:"bottom-end",
+                title:`${username} left the room!`,
+                icon:"success",
+                timer:3000,
+            });
+            this.setState({activePlayers});
+        });
+
+        // update player
+        socket.on("updatePlayer",(activePlayers)=>{
+            this.setState({activePlayers});
         });
 
         // dark mode detection
@@ -641,6 +664,8 @@ export class Game extends React.Component {
                             currentBrushBoard={this.state.currentBrushBoard}
                             board={this.state.board}
                             darkMode={this.state.darkMode}
+                            activePlayers={this.state.activePlayers}
+                            playerSocketId={this.state.playerSocketId}
                             onMouseDown={(e)=>{
                                 this.setState({mouseIsDown:true});
                             }}
@@ -708,14 +733,25 @@ export class Game extends React.Component {
                                         }
                                     }
                                 }
+                                
+                                // this.setState({
+                                //     hoverRange: newHoverRange,
+                                //     canvasMouseX:adjustedX,
+                                //     canvasMouseY:adjustedY,
+                                // });
+                                // socket.emit("hoverCellBrush",roomId,newHoverRange,this.state.playerSocketId);
 
-                                // Only update the state if the hover range has changed
-                                if (JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverRange)) {
+                                // only update the state if the hover range has changed
+                                const hoverChanged = JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverRange);
+                                const mouseMoved = adjustedX !== this.state.canvasMouseX || adjustedY !== this.state.canvasMouseY;
+                                
+                                if (hoverChanged || mouseMoved) {
                                     this.setState({
                                         hoverRange: newHoverRange,
                                         canvasMouseX:adjustedX,
                                         canvasMouseY:adjustedY,
                                     });
+                                    socket.emit("hoverCellBrush",roomId,newHoverRange,this.state.playerSocketId);
                                 }
 
                             }}

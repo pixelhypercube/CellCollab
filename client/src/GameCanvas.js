@@ -3,9 +3,9 @@ import React from "react";
 export default class GameCanvas extends React.Component {
     constructor(props) {
         super(props);
-        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverRange,hoverPosition,currentBrushBoard} = this.props;
+        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverRange,hoverPosition,currentBrushBoard,activePlayers,playerSocketId} = this.props;
         this.state = {
-            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverRange,hoverPosition,currentBrushBoard,
+            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverRange,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,
             hoverCell: { row: null, col: null },
             scale:1,
             dragging:false,
@@ -40,6 +40,16 @@ export default class GameCanvas extends React.Component {
             this.setState({hoverRange:this.props.hoverRange}, () => {
                 this.canvasRender();
             });
+        }
+        
+        if (prevProps.activePlayers !== this.props.activePlayers) {
+            this.setState({activePlayers:this.props.activePlayers},()=>{
+                this.canvasRender();
+            });
+        }
+
+        if (prevProps.playerSocketId !== this.props.playerSocketId) {
+            this.setState({playerSocketId:this.props.playerSocketId});
         }
     }
 
@@ -114,8 +124,21 @@ export default class GameCanvas extends React.Component {
                     const xPos = j*cellWidth;
                     const yPos = i*cellHeight;
                     const isAlive = board[i][j] === 1;
-                    const isHovering = this.props.hoverRange?.[i]?.[j] === 1;
-                    this.printCell(xPos,yPos,isAlive,isHovering,ctx);
+                    // let isHovering = this.props.hoverRange?.[i]?.[j] === 1;
+                    let isSelfHovering = this.props.hoverRange?.[i]?.[j] === 1;
+                    let isHovering;
+                    // test for all the hovering players
+                    let playerHoverInfo;
+                    if (this.props.activePlayers) {
+                        for (let key of Object.keys(this.props.activePlayers)) {
+                            if (this.props.activePlayers[key] && key!==this.props.playerSocketId) {
+                                playerHoverInfo = this.props.activePlayers[key].hoverRange;
+                                isHovering = playerHoverInfo?.[i]?.[j]===1 ? 1 : isHovering;
+                            }
+                        }
+                    }
+
+                    this.printCell(xPos,yPos,isAlive,isHovering,isSelfHovering,ctx);
                 }
             }
         }
@@ -123,7 +146,7 @@ export default class GameCanvas extends React.Component {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
-    printCell = (xPos,yPos,isAlive,isHovering,ctx) => {
+    printCell = (xPos,yPos,isAlive,isHovering,isSelfHovering,ctx) => {
         let {cellWidth,cellHeight,darkMode} = this.state;
         if (darkMode) {
             ctx.fillStyle = isAlive ? "white" : "black";
@@ -137,6 +160,10 @@ export default class GameCanvas extends React.Component {
         ctx.fillRect(xPos,yPos,cellWidth,cellHeight);
         if (isHovering) {
             ctx.fillStyle = "rgba(127, 127, 127, 0.5)";
+            ctx.fillRect(xPos,yPos,cellWidth,cellHeight);
+        }
+        if (isSelfHovering) {
+            ctx.fillStyle = "rgba(255, 127, 0, 0.5)";
             ctx.fillRect(xPos,yPos,cellWidth,cellHeight);
         }
         ctx.strokeRect(xPos,yPos,cellWidth,cellHeight);

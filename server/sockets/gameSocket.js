@@ -50,8 +50,21 @@ module.exports = function(io) {
                 socket.emit("boardDims",boardHeight,boardWidth);
                 socket.emit("speed",rooms[roomId].speed);
 
-                // username joined
-                io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username); 
+                // player joined
+                if (!rooms[roomId].activePlayers) {
+                    rooms[roomId].activePlayers = {};
+                }
+                rooms[roomId].activePlayers[socket.id] = {
+                    username,
+                    hoverPosition:null,
+                    hoverRange:[]
+                };
+                socket.emit("selfJoined",{
+                    playerSocketId:socket.id,
+                    // activePlayers:rooms[roomId].activePlayers,
+                    username
+                });
+                io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username,rooms[roomId].activePlayers[socket.id]); 
             }
             else {
                 if (!rooms[roomId]) socket.emit("roomExists",roomId,false);
@@ -67,8 +80,21 @@ module.exports = function(io) {
                     socket.emit("boardDims",boardHeight,boardWidth);
                     socket.emit("speed",rooms[roomId].speed);
 
-                    // username joined
-                    io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username);
+                    // player joined
+                    if (!rooms[roomId].activePlayers) {
+                        rooms[roomId].activePlayers = {};
+                    }
+                    rooms[roomId].activePlayers[socket.id] = {
+                        username,
+                        hoverPosition:null,
+                        hoverRange:[]
+                    };
+                    socket.emit("selfJoined",{
+                        playerSocketId:socket.id,
+                        // activePlayers:rooms[roomId].activePlayers[socket.id],
+                        username
+                    });
+                    io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username,rooms[roomId].activePlayers[socket.id]);
                 }
             }
         });
@@ -96,8 +122,21 @@ module.exports = function(io) {
                     socket.emit("speed",rooms[roomId].speed);
                     socket.emit("iterations",rooms[roomId].iterations);
 
-                    // username joined
-                    io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username);
+                    // player joined
+                    if (!rooms[roomId].activePlayers) {
+                        rooms[roomId].activePlayers = {};
+                    }
+                    rooms[roomId].activePlayers[socket.id] = {
+                        username,
+                        hoverPosition:null,
+                        hoverRange:[]
+                    };
+                    socket.emit("selfJoined",{
+                        playerSocketId:socket.id,
+                        // activePlayers:rooms[roomId].activePlayers[socket.id],
+                        username
+                    });
+                    io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username,rooms[roomId].activePlayers[socket.id]);
                 } else {
                     if (rooms[roomId].board) {
                         // check whether to resize board or not
@@ -117,8 +156,21 @@ module.exports = function(io) {
                         socket.emit("speed",speed);
                         socket.emit("iterations",rooms[roomId].iterations);
 
-                        // username joined
-                        io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username);
+                        // player joined
+                        if (!rooms[roomId].activePlayers) {
+                            rooms[roomId].activePlayers = {};
+                        }
+                        rooms[roomId].activePlayers[socket.id] = {
+                            username,
+                            hoverPosition:null,
+                            hoverRange:[]
+                        };
+                        socket.emit("selfJoined",{
+                            playerSocketId:socket.id,
+                            // activePlayers:rooms[roomId].activePlayers[socket.id],
+                            username
+                        });
+                        io.to(roomId).emit("userJoin", username=="" ? generateRandomUsername() : username,rooms[roomId].activePlayers[socket.id]);
                     }
                 }
             }
@@ -143,8 +195,21 @@ module.exports = function(io) {
                         socket.emit("speed",speed);
                         socket.emit("iterations",rooms[roomId].iterations);
 
-                        // username joined
-                        io.to(roomId).emit("userJoin", username);
+                        // player joined
+                        if (!rooms[roomId].activePlayers) {
+                            rooms[roomId].activePlayers = {};
+                        }
+                        rooms[roomId].activePlayers[socket.id] = {
+                            username,
+                            hoverPosition:null,
+                            hoverRange:[]
+                        };
+                        socket.emit("selfJoined",{
+                            playerSocketId:socket.id,
+                            // activePlayers:rooms[roomId].activePlayers[socket.id],
+                            username
+                        });
+                        io.to(roomId).emit("userJoin", username,rooms[roomId].activePlayers[socket.id]);
                     }
                 }
             } 
@@ -185,6 +250,17 @@ module.exports = function(io) {
                 io.to(roomId).emit("update", room.board);
                 room.iterations = 0;
                 io.to(roomId).emit("iterations",room.iterations);
+            }
+        });
+
+        socket.on("hoverCellBrush",(roomId, hoverRange, socketId)=>{
+            if (rooms[roomId]) {
+                if (rooms[roomId].activePlayers) {
+                    if (rooms[roomId].activePlayers[socketId]) {
+                        rooms[roomId].activePlayers[socketId].hoverRange = hoverRange;
+                        io.to(roomId).emit("updatePlayer",rooms[roomId].activePlayers);
+                    }
+                }
             }
         });
 
@@ -230,8 +306,18 @@ module.exports = function(io) {
             }
         });
 
-        socket.on("disconnect", () => {
-            console.log("Client Disconnected");
+        socket.on("disconnect", (roomId) => {
+            if (rooms[roomId]) {
+                if (rooms[roomId].activePlayers) {
+                    if (rooms[roomId].activePlayers[socket.id]) {
+                        delete rooms[roomId].activePlayers[socket.id];
+                        const activePlayers = rooms[roomId].activePlayers;
+                        const username = activePlayers[socket.id].username;
+                        io.to(roomId).emit("userLeave",activePlayers,username);
+                    }
+                }
+            }
+            console.log("Client Disconnected",socket.id);
         });
     });
 };
