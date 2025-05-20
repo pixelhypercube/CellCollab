@@ -1,4 +1,5 @@
 import React from "react";
+import cursorImgUrl from "./img/cursor.png";
 
 export default class GameCanvas extends React.Component {
     constructor(props) {
@@ -12,6 +13,15 @@ export default class GameCanvas extends React.Component {
             lastMousePosition:{x:0,y:0},
             offset:{x:0,y:0},
         };
+
+        // cursor image
+        this.cursorImage = new Image();
+        this.cursorImage.src = cursorImgUrl;
+
+        this.cursorImageLoaded = false;
+        this.cursorImage.onload = () => {
+            this.cursorImageLoaded = true;
+        }
 
         this.canvasRef = React.createRef();
     }
@@ -141,9 +151,46 @@ export default class GameCanvas extends React.Component {
                     this.printCell(xPos,yPos,isAlive,isHovering,isSelfHovering,ctx);
                 }
             }
+            
+            if (this.props.activePlayers) {
+                for (let key of Object.keys(this.props.activePlayers)) {
+                    if (this.props.activePlayers[key] && key!==this.props.playerSocketId) {
+                        const {hoverPosition,username} = this.props.activePlayers[key];
+                        if (hoverPosition && username) {
+                            const {x,y} = hoverPosition;
+                            this.renderPlayerLabel(x,y,12,"#fff",username,ctx);
+                        }
+                    }
+                }
+            }
         }
 
         ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    renderPlayerLabel = (xPos,yPos,fontSize,color,username,ctx) => {
+
+        // cursor image
+        if (this.cursorImageLoaded) {
+            const imgWidth = 24;
+            const imgHeight = 24;
+            ctx.drawImage(this.cursorImage, xPos-imgWidth/2,yPos-imgHeight/2,imgWidth,imgHeight);
+            const strWidth = username.length * fontSize * 0.6;
+            const strHeight = fontSize * 1.2;
+            const labelX = xPos + 2;
+            const labelY = yPos;
+
+            const offsetX = 5, offsetY = 5;
+
+            ctx.fillStyle = color;
+            ctx.fillRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
+            ctx.strokeStyle = "grey";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
+            ctx.fillStyle = "#000";
+            ctx.font = `${fontSize}px Arial`;
+            ctx.fillText(username,labelX+offsetX,labelY+fontSize+offsetY);
+        }
     }
 
     printCell = (xPos,yPos,isAlive,isHovering,isSelfHovering,ctx) => {
@@ -178,6 +225,7 @@ export default class GameCanvas extends React.Component {
             onMouseDown={this.props.onMouseDown}
             onClick={this.props.onClick} 
             onMouseUp={this.props.onMouseUp}
+            onMouseLeave={this.props.onMouseLeave}
             width={canvasWidth} 
             height={canvasHeight} 
             ref={this.canvasRef}></canvas>

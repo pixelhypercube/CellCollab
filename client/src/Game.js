@@ -462,7 +462,7 @@ export class Game extends React.Component {
     // non-socket functions
 
     handleMouseOver = (i,j) => {
-        this.setState({hoverPosition:{i,j}});
+        this.setState({hoverPosition:{y:i,x:j}});
         let currentBrushBoard = this.state.currentBrushBoard;
         let brushHeight = currentBrushBoard.length,brushWidth = currentBrushBoard[0].length;
         if (this.state.hoverPosition) {
@@ -747,13 +747,24 @@ export class Game extends React.Component {
                                 
                                 if (hoverChanged || mouseMoved) {
                                     this.setState({
+                                        hoverPosition:{x:adjustedX,y:adjustedY},
                                         hoverRange: newHoverRange,
                                         canvasMouseX:adjustedX,
                                         canvasMouseY:adjustedY,
                                     });
-                                    socket.emit("hoverCellBrush",roomId,newHoverRange,this.state.playerSocketId);
+                                    socket.emit("hoverCellBrush",roomId,newHoverRange,{x:adjustedX,y:adjustedY},this.state.playerSocketId);
                                 }
 
+                            }}
+                            onMouseLeave={()=>{
+                                // Create a new hover range
+                                const newHoverRange = Array.from({ length: this.state.board.length },() =>
+                                    Array(this.state.board[0].length).fill(0)
+                                );
+
+                                this.setState({hoverPosition:null,hoverRange:newHoverRange});
+
+                                socket.emit("hoverCellBrush",roomId,newHoverRange,null,this.state.playerSocketId);
                             }}
                             onTransformChange={this.handleTransformChange}
                             ></GameCanvas>
