@@ -290,11 +290,12 @@ module.exports = function(io) {
                 const room = rooms[roomId];
                 for (let x = 0; x < brush.length; x++) {
                     for (let y = 0; y < brush[0].length; y++) {
-                        const boardX = i + x;
-                        const boardY = j + y;
+                        const boardY = i + x;
+                        const boardX = j + y;
 
-                        if (boardX >= 0 && boardX < room.board.length && boardY >= 0 && boardY < room.board[0].length) {
-                            room.board[boardX][boardY] = brush[x][y];
+                        if (boardY >= 0 && boardY < room.board.length && boardX >= 0 && boardX < room.board[0].length) {
+                            if (room.board[boardY][boardX]==0 && brush[x][y]==1) room.board[boardY][boardX] = 1;
+                            else if (room.board[boardY][boardX]==1 && brush[x][y]==1) room.board[boardY][boardX] = 0;
                         }
                     }
                 }

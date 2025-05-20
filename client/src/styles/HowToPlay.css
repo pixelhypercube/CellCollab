@@ -1,0 +1,23 @@
+.accordion-dark {
+    background-color: #1e1e1e;
+    color: white;
+    border: 1px solid #333;
+}
+
+.accordion-dark .accordion-button {
+    background-color: #2a2a2a;
+    color: white;
+}
+
+.accordion-dark .accordion-button:not(.collapsed) {
+    background-color: #333;
+}
+
+.accordion-dark .accordion-body {
+    background-color: #262626;
+    color: #e0e0e0;
+}
+
+.accordion-dark .accordion-button::after {
+    filter: invert(1); /* Inverts black to white */
+}

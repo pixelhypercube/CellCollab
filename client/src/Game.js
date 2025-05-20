@@ -10,6 +10,7 @@ import GameCanvas from "./components/GameCanvas";
 import BrushPreview from "./components/BrushPreview";
 import throttle from "lodash.throttle";
 import NumberContainer from "./components/NumberContainer";
+import HowToPlay from "./components/HowToPlay";
 
 const MySwal = withReactContent(Swal);
 
@@ -501,26 +502,6 @@ export class Game extends React.Component {
         socket.emit("reset",this.state.roomId);
     };
 
-    handleCellClick = (i,j) => {
-        let currentBrushBoard = this.state.currentBrushBoard;
-        let brushHeight = currentBrushBoard.length,brushWidth = currentBrushBoard[0].length;
-        let newValue;
-
-        let boardHeight = this.state.board.length;
-        let boardWidth = this.state.board[0].length;
-        for (let di = i,idx = 0;di<i+brushHeight;di++,idx++) {
-            if (di < 0 || di >= boardHeight) continue;
-            for (let dj = j,jdx = 0;dj<j+brushWidth;dj++,jdx++) {
-                if (dj < 0 || dj >= boardWidth) continue;
-
-                if (currentBrushBoard[idx][jdx] === 1) {
-                    newValue = this.state.board[di][dj] === 1 ? 0 : 1;
-                    socket.emit("updateCell",this.state.roomId,di,dj,newValue);
-                }
-            }
-        }
-    };
-
     handleToggleSpeed = (e) => {
         this.setState({speed:e.target.value});
         socket.emit("speed",this.state.roomId,e.target.value);
@@ -751,9 +732,7 @@ export class Game extends React.Component {
                                     // UPDATE CELL
                                     const i = Math.floor(adjustedY/cellHeight);
                                     const j = Math.floor(adjustedX/cellWidth);
-                                    
-                                    if (board[i][j]===0) board[i][j] = 1;
-                                    else board[i][j] = 0;
+
                                     this.setState({adjustedX,adjustedY,board});
                                     socket.emit("updateCellBrush",roomId,i,j,this.state.currentBrushBoard);
                                 }
@@ -803,13 +782,6 @@ export class Game extends React.Component {
                                     }
                                 }
                                 
-                                // this.setState({
-                                //     hoverRange: newHoverRange,
-                                //     canvasMouseX:adjustedX,
-                                //     canvasMouseY:adjustedY,
-                                // });
-                                // socket.emit("hoverCellBrush",roomId,newHoverRange,this.state.playerSocketId);
-
                                 // only update the state if the hover range has changed
                                 const hoverChanged = JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverRange);
                                 const mouseMoved = adjustedX !== this.state.canvasMouseX || adjustedY !== this.state.canvasMouseY;
@@ -1303,8 +1275,8 @@ export class Game extends React.Component {
                                             ]});
                                         }} selected={this.state.currentBrush==="Pi Heptomino"} darkMode={darkMode} title="Pi Heptomino" color={darkMode ? "#5a005c" : "#feccff"} borderColor={darkMode ? "#feccff" : "#5a005c"} board={[
                                             [1,1,1],
-                                                [1,0,1],
-                                                [1,0,1],
+                                            [1,0,1],
+                                            [1,0,1],
                                         ]}></Brush>
                                     </Col>
                                     <Col xs={6}>
@@ -1637,6 +1609,7 @@ export class Game extends React.Component {
                         </Col>
                     </Row>
                     <br></br>
+                    <HowToPlay darkMode={darkMode}></HowToPlay>
                 </div>
                 )}
             </main>
