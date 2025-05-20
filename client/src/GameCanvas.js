@@ -175,7 +175,7 @@ export default class GameCanvas extends React.Component {
             const imgWidth = 24;
             const imgHeight = 24;
             ctx.drawImage(this.cursorImage, xPos-imgWidth/2,yPos-imgHeight/2,imgWidth,imgHeight);
-            const strWidth = username.length * fontSize * 0.6;
+            const strWidth = username.length * fontSize * 0.55;
             const strHeight = fontSize * 1.2;
             const labelX = xPos + 2;
             const labelY = yPos;
@@ -188,7 +188,7 @@ export default class GameCanvas extends React.Component {
             ctx.lineWidth = 2;
             ctx.strokeRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
             ctx.fillStyle = "#000";
-            ctx.font = `${fontSize}px Arial`;
+            ctx.font = `${fontSize}px Rubik`;
             ctx.fillText(username,labelX+offsetX,labelY+fontSize+offsetY);
         }
     }

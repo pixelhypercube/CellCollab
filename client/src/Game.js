@@ -756,7 +756,7 @@ export class Game extends React.Component {
                                     });
                                     this.throttledEmitHover = throttle((newHoverRange,adjustedX,adjustedY)=>{
                                         socket.emit("hoverCellBrush", roomId, newHoverRange, { x: adjustedX, y: adjustedY }, this.state.playerSocketId);
-                                    },50);
+                                    },100);
                                     this.throttledEmitHover(newHoverRange,adjustedX,adjustedY);
                                 }
 
@@ -773,26 +773,6 @@ export class Game extends React.Component {
                             }}
                             onTransformChange={this.handleTransformChange}
                             ></GameCanvas>
-                            {/* <table className={"grid"}>
-                                <tbody>
-                                    {board.map((row,i) => (
-                                    <tr key={i}>
-                                        {row.map((cell,j) => (
-                                        <td
-                                            key={j}
-                                            className={`cell ${cell === 1 ? "alive" : "dead"} ${darkMode ? "dark" : ""} 
-                                                ${this.state.hoverPosition!==null 
-                                                    && this.state.hoverRange?.[i]?.[j]===1 ? 'hover' : ''}
-                                            }`}
-                                            onClick={() => this.handleCellClick(i,j)}
-                                            onMouseOver={() => this.handleMouseOver(i,j)}
-                                            onMouseLeave={() => this.setState({ hoverPosition: null })}
-                                        ></td>
-                                        ))}
-                                    </tr>
-                                    ))}
-                                </tbody>
-                            </table> */}
                             <br></br>
                             <p>Iterations: <strong>{iterations}</strong>, Population: <strong>{board.flat().reduce((a,b)=>a+b,0)}</strong></p>
                             <br></br>
