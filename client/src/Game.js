@@ -1,7 +1,7 @@
 import React from "react";
 import socket from "./socket";
 import "./Game.css";
-import {Button,Container,Form,Row,Col,Alert} from "react-bootstrap";
+import {Button,Container,Form,Row,Col,Alert, Dropdown} from "react-bootstrap";
 import Brush from "./components/Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -16,6 +16,65 @@ const MySwal = withReactContent(Swal);
 export class Game extends React.Component {
     constructor(props) {
         super(props);
+
+        this.colorSchemesList = {
+            "default": [
+                "#2e7dff", "#00bcd4", "#4caf50", "#cddc39",
+                "#ffeb3b", "#ffb300", "#ff7043", "#e53935", "#8e24aa"
+            ],
+
+            "coolBlues": [
+                "#0d47a1", "#1976d2", "#42a5f5", "#90caf9",
+                "#e3f2fd", "#4fc3f7", "#29b6f6", "#0288d1", "#01579b"
+            ],
+
+            "sunset": [
+                "#ff6e40", "#ff8a65", "#ffb74d", "#ffd54f",
+                "#fff176", "#fff59d", "#ffe082", "#ffcc80", "#ffab91"
+            ],
+
+            "forest": [
+                "#1b5e20", "#2e7d32", "#388e3c", "#43a047",
+                "#66bb6a", "#81c784", "#a5d6a7", "#c8e6c9", "#e8f5e9"
+            ],
+
+            "cyberpunk": [
+                "#ff005e", "#ff55a5", "#ff8c00", "#e5ff00",
+                "#00fff7", "#00ff9c", "#be00ff", "#8000ff", "#cc00ff"
+            ],
+
+            "grayscale": [
+                "#212121", "#424242", "#616161", "#757575",
+                "#9e9e9e", "#bdbdbd", "#e0e0e0", "#eeeeee", "#ffffff"
+            ],
+
+            "ocean": [
+                "#003f5c", "#2f4b7c", "#665191", "#a05195",
+                "#d45087", "#f95d6a", "#ff7c43", "#ffa600", "#ffd700"
+            ],
+
+            "pastel": [
+                "#ffd1dc", "#ffe0ac", "#d0f0c0", "#c1c8e4",
+                "#f0e68c", "#e6e6fa", "#ffb347", "#add8e6", "#b0e0e6"
+            ],
+
+            "darkMode": [
+                "#8e24aa", "#5e35b1", "#3949ab", "#1e88e5",
+                "#00acc1", "#00897b", "#43a047", "#7cb342", "#c0ca33"
+            ],
+
+            "rainbow": [
+                "#e53935", "#fb8c00", "#fdd835", "#43a047",
+                "#1e88e5", "#3949ab", "#8e24aa", "#d81b60", "#00acc1"
+            ],
+
+            "monoContrast": [
+                "#111", "#222", "#333", "#444", "#555", "#666", "#777", "#888", "#999"
+            ]
+        };
+        
+        this.colorSchemeNames = Object.keys(this.colorSchemesList);
+
         this.state = {
             board: [],
             playerSocketId:"",
@@ -59,17 +118,8 @@ export class Game extends React.Component {
 
             // color scheme
             colorSchemeEnabled:false,
-            colorScheme:[
-                "#2e7dff",
-                "#00bcd4",
-                "#4caf50",
-                "#cddc39",
-                "#ffeb3b",
-                "#ffb300",
-                "#ff7043",
-                "#e53935",
-                "#8e24aa"
-            ],
+            selectedColorScheme:"default",
+            colorScheme:this.colorSchemesList["default"], // default selected first
 
             // transform keys
             // scale:1,
@@ -773,7 +823,7 @@ export class Game extends React.Component {
                                     });
                                     this.throttledEmitHover = throttle((newHoverRange,adjustedX,adjustedY)=>{
                                         socket.emit("hoverCellBrush", roomId, newHoverRange, { x: adjustedX, y: adjustedY }, this.state.playerSocketId);
-                                    },100);
+                                    },250);
                                     this.throttledEmitHover(newHoverRange,adjustedX,adjustedY);
                                 }
 
@@ -1257,6 +1307,32 @@ export class Game extends React.Component {
                                                 [1,0,1],
                                         ]}></Brush>
                                     </Col>
+                                    <Col xs={6}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"E Heptomino",currentBrushBoard:[
+                                                [0,1,1,1],
+                                                [1,1,0,0],
+                                                [0,1,1,0]
+                                            ]});
+                                        }} selected={this.state.currentBrush==="E Heptomino"} darkMode={darkMode} title="E Heptomino" color={darkMode ? "#5a005c" : "#feccff"} borderColor={darkMode ? "#feccff" : "#5a005c"} board={[
+                                            [0,1,1,1],
+                                            [1,1,0,0],
+                                            [0,1,1,0]
+                                        ]}></Brush>
+                                    </Col>
+                                    <Col xs={6}>
+                                        <Brush onClick={()=>{
+                                            this.setState({currentBrush:"B Heptomino",currentBrushBoard:[
+                                                [1,0,1,1],
+                                                [1,1,1,0],
+                                                [0,1,0,0]
+                                            ]});
+                                        }} selected={this.state.currentBrush==="B Heptomino"} darkMode={darkMode} title="B Heptomino" color={darkMode ? "#5a005c" : "#feccff"} borderColor={darkMode ? "#feccff" : "#5a005c"} board={[
+                                            [1,0,1,1],
+                                            [1,1,1,0],
+                                            [0,1,0,0]
+                                        ]}></Brush>
+                                    </Col>
                                     <Col xs={12}>
                                         <Brush onClick={()=>{
                                             this.setState({currentBrush:"295P5H1V1",currentBrushBoard:
@@ -1485,15 +1561,78 @@ export class Game extends React.Component {
                                 justifySelf:"center"
                             }}></hr>
                             <h3><u>Color Scheme</u></h3>
-                            <Container style={{display:"flex",justifyContent:"center"}}>
+                            <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <Form.Check
-                                    style={{maxWidth:"200px"}}
+                                    style={{alignSelf:"center",marginBottom:"10px"}}
                                     size={20}
                                     checked={this.state.colorSchemeEnabled}
                                     onChange={()=>this.setState({colorSchemeEnabled:!this.state.colorSchemeEnabled})}
                                     type="switch"
                                     label="Enable Color Scheme"
                                 />
+                                <Dropdown onSelect={(eventKey) => {
+                                    this.setState({
+                                        selectedColorScheme: eventKey,
+                                        colorScheme: this.colorSchemesList[eventKey]
+                                    });
+                                }}
+                                style={{alignSelf:"center"}}
+                                >
+                                    <Dropdown.Toggle variant={"outline-" + (darkMode ? "light" : "dark")}
+                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
+                                        <span>{this.state.selectedColorScheme}</span>
+                                        <div style={{ display: "flex", gap: "2px" }}>
+                                            {
+                                                this.colorSchemesList[this.state.selectedColorScheme]?.map((color, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        style={{
+                                                            width: "12px",
+                                                            height: "12px",
+                                                            backgroundColor: color,
+                                                            borderRadius: "2px",
+                                                            border: "1px solid rgba(0,0,0,0.2)"
+                                                        }}
+                                                    />
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                    </Dropdown.Toggle>
+
+                                    <Dropdown.Menu style={{ minWidth: '250px' }}>
+                                        {
+                                            this.colorSchemeNames.map((name) => (
+                                                <Dropdown.Item eventKey={name} key={name}>
+                                                    <div style={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center"
+                                                    }}>
+                                                        <span>{name}</span>
+                                                        <div style={{ display: "flex", gap: "2px", marginLeft: "10px", flexWrap: "nowrap" }}>
+                                                            {
+                                                                this.colorSchemesList[name].map((color, idx) => (
+                                                                    <div
+                                                                        key={idx}
+                                                                        style={{
+                                                                            width: "12px",
+                                                                            height: "12px",
+                                                                            backgroundColor: color,
+                                                                            borderRadius: "2px",
+                                                                            border: "1px solid rgba(0,0,0,0.2)"
+                                                                        }}
+                                                                    />
+                                                                ))
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </Dropdown.Item>
+                                            ))
+                                        }
+                                    </Dropdown.Menu>
+                                </Dropdown>
                             </Container>
                         </Col>
                     </Row>

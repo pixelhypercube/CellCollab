@@ -69,6 +69,18 @@ export default class GameCanvas extends React.Component {
                 this.canvasRender();
             });
         }
+
+        if (prevProps.colorScheme !== this.props.colorScheme) {
+            this.setState({colorScheme:this.props.colorScheme},()=>{
+                this.canvasRender();
+            });
+        }
+
+        if (prevProps.darkMode !== this.props.darkMode) {
+            this.setState({darkMode:this.props.darkMode},()=>{
+                this.canvasRender();
+            });
+        }
     }
 
     handleMouseDown = (e) => {
@@ -182,7 +194,7 @@ export default class GameCanvas extends React.Component {
                         const {hoverPosition,username} = this.props.activePlayers[key];
                         if (hoverPosition && username) {
                             const {x,y} = hoverPosition;
-                            this.renderPlayerLabel(x,y,12,"#fff",username,ctx);
+                            this.renderPlayerLabel(x,y,12,username,ctx);
                         }
                     }
                 }
@@ -192,26 +204,26 @@ export default class GameCanvas extends React.Component {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
-    renderPlayerLabel = (xPos,yPos,fontSize,color,username,ctx) => {
+    renderPlayerLabel = (xPos,yPos,fontSize,username,ctx) => {
 
         // cursor image
         if (this.cursorImageLoaded) {
             const imgWidth = 24;
             const imgHeight = 24;
             ctx.drawImage(this.cursorImage, xPos-imgWidth/2,yPos-imgHeight/2,imgWidth,imgHeight);
-            const strWidth = username.length * fontSize * 0.55;
+            const strWidth = username.length * fontSize * 0.6;
             const strHeight = fontSize * 1.2;
             const labelX = xPos + 2;
             const labelY = yPos;
 
             const offsetX = 5, offsetY = 5;
 
-            ctx.fillStyle = color;
+            ctx.fillStyle = this.props.darkMode ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)";
             ctx.fillRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
-            ctx.strokeStyle = "grey";
+            ctx.strokeStyle = this.props.darkMode ? "white" : "black";
             ctx.lineWidth = 2;
             ctx.strokeRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
-            ctx.fillStyle = "#000";
+            ctx.fillStyle = this.props.darkMode ? "white" : "black";
             ctx.font = `${fontSize}px Rubik`;
             ctx.fillText(username,labelX+offsetX,labelY+fontSize+offsetY);
         }
