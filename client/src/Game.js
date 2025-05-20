@@ -2,13 +2,14 @@ import React from "react";
 import socket from "./socket";
 import "./Game.css";
 import {Button,Container,Form,Row,Col,Alert} from "react-bootstrap";
-import Brush from "./Brush";
+import Brush from "./components/Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon } from 'react-icons/fa';
-import GameCanvas from "./GameCanvas";
-import BrushPreview from "./BrushPreview";
+import GameCanvas from "./components/GameCanvas";
+import BrushPreview from "./components/BrushPreview";
 import throttle from "lodash.throttle";
+import NumberContainer from "./components/NumberContainer";
 
 const MySwal = withReactContent(Swal);
 
@@ -54,7 +55,21 @@ export class Game extends React.Component {
             canvasMouseX:0,
             canvasMouseY:0,
             offset:{x:0,y:0},
-            scale:1
+            scale:1,
+
+            // color scheme
+            colorSchemeEnabled:false,
+            colorScheme:[
+                "#2e7dff",
+                "#00bcd4",
+                "#4caf50",
+                "#cddc39",
+                "#ffeb3b",
+                "#ffb300",
+                "#ff7043",
+                "#e53935",
+                "#8e24aa"
+            ],
 
             // transform keys
             // scale:1,
@@ -668,6 +683,8 @@ export class Game extends React.Component {
                             darkMode={this.state.darkMode}
                             activePlayers={this.state.activePlayers}
                             playerSocketId={this.state.playerSocketId}
+                            colorSchemeEnabled={this.state.colorSchemeEnabled}
+                            colorScheme={this.state.colorScheme}
                             onMouseDown={(e)=>{
                                 this.setState({mouseIsDown:true});
                             }}
@@ -774,7 +791,19 @@ export class Game extends React.Component {
                             onTransformChange={this.handleTransformChange}
                             ></GameCanvas>
                             <br></br>
-                            <p>Iterations: <strong>{iterations}</strong>, Population: <strong>{board.flat().reduce((a,b)=>a+b,0)}</strong></p>
+                            <div width="100%" style={{display:"flex", justifyContent:"space-evenly", marginTop:"10px"}}>
+                                <NumberContainer
+                                    title={"Iterations:"}
+                                    number={iterations}
+                                    darkMode={darkMode}
+                                ></NumberContainer>
+                                <NumberContainer
+                                    title={"Population:"}
+                                    darkMode={darkMode}
+                                    number={board.flat().reduce((a,b)=>a+b,0)}
+                                ></NumberContainer>
+                            </div>
+                            {/* <p>Iterations: <strong>{iterations}</strong>, Population: <strong>{board.flat().reduce((a,b)=>a+b,0)}</strong></p> */}
                             <br></br>
                             <Container style={{width:"50%"}}>
                                 <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
@@ -811,7 +840,7 @@ export class Game extends React.Component {
                                     currentBrushBoard={this.state.currentBrushBoard}
                                     ></BrushPreview>
                                 </div>
-                                <hr style={{width:"50%"}}></hr>
+                                <br></br>
                                 <h6>Rotation</h6>
                                 <Row className="mb-1">
                                     <Col>
@@ -827,7 +856,8 @@ export class Game extends React.Component {
                                         }} variant="primary">↺</Button>
                                     </Col>
                                 </Row>
-                                <h6>Step</h6>
+                                <hr style={{width:"50%"}}></hr>
+                                {/* <h6>Step</h6> */}
                                 {/* WIP - Coming soon!!! */}
                                 {/* <Row className="mb-1">
                                     <Col>
@@ -1426,28 +1456,44 @@ export class Game extends React.Component {
                             {/* PAGINATION */}
                             <Container>
                                 <div style={{justifyContent:"space-evenly"}} className="d-flex">
-                                {/* Previous Button */}
-                                <Button
-                                    className={darkMode ? "dark" : ""}
-                                    variant="primary"
-                                    onClick={() => {
-                                        this.setState({ brushPage: brushPage === 0 ? brushPageNames.length - 1 : brushPage - 1 });
-                                    }}
-                                >
-                                    {brushPage === 0 ? `< Prev (${brushPageNames[brushPageNames.length - 1]})` : `< Prev (${brushPageNames[brushPage - 1]})`}
-                                </Button>
+                                    {/* Previous Button */}
+                                    <Button
+                                        className={darkMode ? "dark" : ""}
+                                        variant="primary"
+                                        onClick={() => {
+                                            this.setState({ brushPage: brushPage === 0 ? brushPageNames.length - 1 : brushPage - 1 });
+                                        }}
+                                    >
+                                        {brushPage === 0 ? `< Prev (${brushPageNames[brushPageNames.length - 1]})` : `< Prev (${brushPageNames[brushPage - 1]})`}
+                                    </Button>
 
-                                {/* Next Button */}
-                                <Button
-                                    className={darkMode ? "dark" : ""}
-                                    variant="primary"
-                                    onClick={() => {
-                                        this.setState({ brushPage: brushPage === brushPageNames.length - 1 ? 0 : brushPage + 1 });
-                                    }}
-                                >
-                                    {brushPage === brushPageNames.length - 1 ? `Next (${brushPageNames[0]}) >` : `Next (${brushPageNames[brushPage + 1]}) >`}
-                                </Button>
-                            </div>
+                                    {/* Next Button */}
+                                    <Button
+                                        className={darkMode ? "dark" : ""}
+                                        variant="primary"
+                                        onClick={() => {
+                                            this.setState({ brushPage: brushPage === brushPageNames.length - 1 ? 0 : brushPage + 1 });
+                                        }}
+                                    >
+                                        {brushPage === brushPageNames.length - 1 ? `Next (${brushPageNames[0]}) >` : `Next (${brushPageNames[brushPage + 1]}) >`}
+                                    </Button>
+                                </div>
+                            </Container>
+                            <hr style={{
+                                width:"80%",
+                                display:"flex",
+                                justifySelf:"center"
+                            }}></hr>
+                            <h3><u>Color Scheme</u></h3>
+                            <Container style={{display:"flex",justifyContent:"center"}}>
+                                <Form.Check
+                                    style={{maxWidth:"200px"}}
+                                    size={20}
+                                    checked={this.state.colorSchemeEnabled}
+                                    onChange={()=>this.setState({colorSchemeEnabled:!this.state.colorSchemeEnabled})}
+                                    type="switch"
+                                    label="Enable Color Scheme"
+                                />
                             </Container>
                         </Col>
                     </Row>

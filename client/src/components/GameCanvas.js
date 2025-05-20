@@ -1,5 +1,5 @@
 import React from "react";
-import cursorImgUrl from "./img/cursor.png";
+import cursorImgUrl from "../img/cursor.png";
 
 export default class GameCanvas extends React.Component {
     constructor(props) {
@@ -12,7 +12,9 @@ export default class GameCanvas extends React.Component {
             dragging:false,
             lastMousePosition:{x:0,y:0},
             offset:{x:0,y:0},
+            colorScheme:this.props.colorScheme
         };
+
 
         // cursor image
         this.cursorImage = new Image();
@@ -60,6 +62,12 @@ export default class GameCanvas extends React.Component {
 
         if (prevProps.playerSocketId !== this.props.playerSocketId) {
             this.setState({playerSocketId:this.props.playerSocketId});
+        }
+
+        if (prevProps.colorSchemeEnabled !== this.props.colorSchemeEnabled) {
+            this.setState({colorSchemeEnabled:this.props.colorSchemeEnabled},()=>{
+                this.canvasRender();
+            });
         }
     }
 
@@ -131,6 +139,8 @@ export default class GameCanvas extends React.Component {
             
             for (let i = 0;i<n;i++) {
                 for (let j = 0;j<m;j++) {
+                    let neighborCount = 0;
+                    
                     const xPos = j*cellWidth;
                     const yPos = i*cellHeight;
                     const isAlive = board[i][j] === 1;
@@ -148,7 +158,21 @@ export default class GameCanvas extends React.Component {
                         }
                     }
 
-                    this.printCell(xPos,yPos,isAlive,isHovering,isSelfHovering,ctx);
+                    // count neighbors
+                    if (this.props.colorSchemeEnabled) {
+                        if (i > 0 && j > 0 && board[i-1][j-1] === 1) neighborCount++;
+                        if (i > 0 && board[i-1][j] === 1) neighborCount++;
+                        if (i > 0 && j < m-1 && board[i-1][j+1] === 1) neighborCount++;
+
+                        if (j > 0 && board[i][j-1] === 1) neighborCount++;
+                        if (j < m-1 && board[i][j+1] === 1) neighborCount++;
+
+                        if (i < n-1 && j > 0 && board[i+1][j-1] === 1) neighborCount++;
+                        if (i < n-1 && board[i+1][j] === 1) neighborCount++;
+                        if (i < n-1 && j < m-1 && board[i+1][j+1] === 1) neighborCount++;
+                    }
+
+                    this.printCell(xPos,yPos,isAlive,isHovering,isSelfHovering,neighborCount,ctx);
                 }
             }
             
@@ -193,27 +217,43 @@ export default class GameCanvas extends React.Component {
         }
     }
 
-    printCell = (xPos,yPos,isAlive,isHovering,isSelfHovering,ctx) => {
-        let {cellWidth,cellHeight,darkMode} = this.state;
-        if (darkMode) {
-            ctx.fillStyle = isAlive ? "white" : "black";
-            ctx.strokeStyle = isAlive ? "black" : "white";
+    printCell = (xPos,yPos,isAlive,isHovering,isSelfHovering,numNeighbors,ctx) => {
+        let { cellWidth, cellHeight, darkMode, colorScheme } = this.state;
+        let fill, stroke;
+
+        // Clamp numNeighbors to valid colorScheme index
+        const colorIdx = Math.max(0, Math.min(numNeighbors, colorScheme.length - 1));
+
+        if (this.props.colorSchemeEnabled) {
+            if (isAlive) {
+                fill = colorScheme[colorIdx];
+            } else {
+                fill = darkMode ? "black" : "white";
+            }
+        } else {
+            if (isAlive) {
+                fill = darkMode ? "white" : "black";
+            } else {
+                fill = darkMode ? "black" : "white";
+            }
         }
-        else {
-            ctx.fillStyle = isAlive ? "black" : "white";
-            ctx.strokeStyle = isAlive ? "white" : "black";
-        }
-        ctx.lineWidth = Math.min(this.state.scale*0.25,0.8);
-        ctx.fillRect(xPos,yPos,cellWidth,cellHeight);
+
+        stroke = darkMode ? "grey" : "black";
+
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = Math.min(this.state.scale * 0.25, 0.8);
+        ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
+
         if (isHovering) {
             ctx.fillStyle = "rgba(127, 127, 127, 0.5)";
-            ctx.fillRect(xPos,yPos,cellWidth,cellHeight);
+            ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
         }
         if (isSelfHovering) {
             ctx.fillStyle = "rgba(255, 127, 0, 0.5)";
-            ctx.fillRect(xPos,yPos,cellWidth,cellHeight);
+            ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
         }
-        ctx.strokeRect(xPos,yPos,cellWidth,cellHeight);
+        ctx.strokeRect(xPos, yPos, cellWidth, cellHeight);
     }
 
     render() {

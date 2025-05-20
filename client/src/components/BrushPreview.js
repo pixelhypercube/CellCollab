@@ -1,5 +1,5 @@
 import React from "react";
-import "./Brush.css";
+import "../styles/Brush.css";
 
 export default class BrushPreview extends React.Component {
     render() {
