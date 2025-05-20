@@ -8,6 +8,8 @@ import withReactContent from "sweetalert2-react-content";
 import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon } from 'react-icons/fa';
 import GameCanvas from "./GameCanvas";
 import BrushPreview from "./BrushPreview";
+import throttle from "lodash.throttle";
+
 const MySwal = withReactContent(Swal);
 
 export class Game extends React.Component {
@@ -47,8 +49,8 @@ export class Game extends React.Component {
             // canvas stuff
             canvasWidth:800,
             canvasHeight:800,
-            cellWidth:15,
-            cellHeight:15,
+            cellWidth:30,
+            cellHeight:30,
             canvasMouseX:0,
             canvasMouseY:0,
             offset:{x:0,y:0},
@@ -752,7 +754,10 @@ export class Game extends React.Component {
                                         canvasMouseX:adjustedX,
                                         canvasMouseY:adjustedY,
                                     });
-                                    socket.emit("hoverCellBrush",roomId,newHoverRange,{x:adjustedX,y:adjustedY},this.state.playerSocketId);
+                                    this.throttledEmitHover = throttle((newHoverRange,adjustedX,adjustedY)=>{
+                                        socket.emit("hoverCellBrush", roomId, newHoverRange, { x: adjustedX, y: adjustedY }, this.state.playerSocketId);
+                                    },50);
+                                    this.throttledEmitHover(newHoverRange,adjustedX,adjustedY);
                                 }
 
                             }}
