@@ -149,7 +149,7 @@ export default class GameCanvas extends React.Component {
             );
 
             const scaleChange = dist/this.state.initialPinchDistance;
-            const newScale = Math.min(Math.max(this.state.initialScale*scaleChange,0.5),3);
+            const newScale = Math.min(Math.max(this.state.initialScale*scaleChange,0.1),3);
 
             this.setState((prevState)=>{
                 if (this.props.onTransformChange) {
@@ -211,7 +211,7 @@ export default class GameCanvas extends React.Component {
         e.preventDefault();
         const scaleChange = e.deltaY > 0 ? 0.9 : 1.1; // Zoom out or in
         this.setState((prevState) => {
-            const newScale = Math.min(Math.max(prevState.scale * scaleChange, 0.5), 3); // Clamp scale between 0.5 and 3
+            const newScale = Math.min(Math.max(prevState.scale * scaleChange, 0.1), 3); // Clamp scale between 0.1 and 3
             
             if (this.props.onTransformChange) {
                 this.props.onTransformChange({ offset: prevState.offset, scale: newScale });
