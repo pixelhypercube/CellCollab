@@ -8,7 +8,11 @@ export default class Brush extends React.Component {
                 <small style={{display:this.props.selected ? "block" : "none",marginBottom:"5px"}}>(selected)</small>
                 <table className="brush-grid">
                     <tbody>
-                        {this.props.board.map((row, i) => (
+                        {[
+                            Array(this.props.board[0].length+2).fill(0), // top border
+                            ...this.props.board.map(row => [0,...row,0]), // side borders
+                            Array(this.props.board[0].length+2).fill(0), // bottom border
+                        ].map((row, i) => (
                         <tr key={i}>
                             {row.map((cell, j) => (
                             <td

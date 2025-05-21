@@ -12,7 +12,9 @@ export default class GameCanvas extends React.Component {
             dragging:false,
             lastMousePosition:{x:0,y:0},
             offset:{x:0,y:0},
-            colorScheme:this.props.colorScheme
+            colorScheme:this.props.colorScheme,
+            initialPinchDistance:null,
+            initialScale:null,
         };
 
 
@@ -34,6 +36,11 @@ export default class GameCanvas extends React.Component {
         this.canvasRef.current.addEventListener("mousedown", this.handleMouseDown);
         this.canvasRef.current.addEventListener("mousemove", this.handleMouseMove);
         this.canvasRef.current.addEventListener("mouseup", this.handleMouseUp);
+
+        // TOUCH EVENTS
+        this.canvasRef.current.addEventListener("touchstart",this.handleTouchStart);
+        this.canvasRef.current.addEventListener("touchmove",this.handleTouchMove);
+        this.canvasRef.current.addEventListener("touchend",this.handleTouchEnd);
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -81,6 +88,83 @@ export default class GameCanvas extends React.Component {
                 this.canvasRender();
             });
         }
+    }
+
+    // TOUCH EVENTS
+
+    handleTouchStart = (e) => {
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            this.setState({
+                dragging:true,
+                lastMousePosition:{
+                    x:touch.clientX,
+                    y:touch.clientY
+                }
+            })
+        } else if (e.touches.length === 2) {
+            const [touch1, touch2] = e.touches;
+            const dist = Math.sqrt(
+                Math.pow(touch2.clientX-touch1.clientX,2) + 
+                Math.pow(touch2.clientY-touch1.clientY,2)
+            );
+            this.setState({
+                initialPinchDistance:dist,
+                initialScale:this.state.scale
+            })
+        }
+    }
+
+    handleTOuchMove = (e) => {
+        e.preventDefault();
+
+        if (e.touches.length===1 && this.state.dragging) {
+            const touch = e.touches[0];
+            const dx = touch.clientX-this.state.lastMousePosition.x;
+            const dy = touch.clientY-this.state.lastMousePosition.y;
+
+            this.setState((prevState)=>{
+                const newOffset = {
+                    x:prevState.offset.x + dx,
+                    y:prevState.offset.y + dy
+                };
+
+                if (this.props.onTransformChange) {
+                    this.props.onTransformChange({offset:newOffset,scale:prevState.scale});
+                }
+
+                return {
+                    offset:newOffset,
+                    lastMousePosition:{
+                        x:touch.clientX,
+                        y:touch.clientY
+                    }
+                }
+            },this.canvasRender);
+        } else if (e.touches.length===2) {
+            const [touch1,touch2] = e.touches;
+            const dist = Math.sqrt(
+                Math.pow(touch2.clientX-touch1.clientX,2) + 
+                Math.pow(touch2.clientY-touch1.clientY,2)
+            );
+
+            const scaleChange = dist/this.state.initialPinchDistance;
+            const newScale = Math.min(Math.max(this.state.initialScale*scaleChange,0.5),3);
+
+            this.setState((prevState)=>{
+                if (this.props.onTransformChange) {
+                    this.props.onTransformChange({
+                        offset:prevState.offset,
+                        scale:newScale
+                    });
+                }
+                return {scale:newScale};
+            },this.canvasRender);
+        }
+    }
+
+    handleTouchEnd = (e) => {
+        this.setState({dragging:false,initialPinchDistance:null})
     }
 
     handleMouseDown = (e) => {
@@ -272,7 +356,10 @@ export default class GameCanvas extends React.Component {
         const {canvasWidth,canvasHeight,darkMode} = this.state;
         return <div>
             <canvas onMouseMove={this.props.onMouseMove} 
-            style={{border:`2px solid ${darkMode ? `white` : `black`}`}} 
+            style={{
+                border:`2px solid ${darkMode ? `white` : `black`}`,
+                cursor: this.state.dragging ? "grabbing" : "grab",
+            }} 
             // onWheel={this.handleWheel}
             onMouseDown={this.props.onMouseDown}
             onClick={this.props.onClick} 
