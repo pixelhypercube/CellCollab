@@ -894,7 +894,7 @@ export class Game extends React.Component {
                                 <h4><u>Palette</u></h4>
                                 {
                                     Object.entries(brushes).map(([categoryName,brushList],idx)=>{
-                                        return (<Row style={{display:brushPage===idx ? "flex" : "none"}}>
+                                        return (<Row key={categoryName} style={{display:brushPage===idx ? "flex" : "none"}}>
                                             <h5>{categoryName}</h5>
                                             {brushList.map((brush)=>{
                                                 const boardWidth = brush.board[0].length;

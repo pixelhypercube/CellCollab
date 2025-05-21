@@ -115,7 +115,7 @@ export default class GameCanvas extends React.Component {
         }
     }
 
-    handleTOuchMove = (e) => {
+    handleTouchMove = (e) => {
         e.preventDefault();
 
         if (e.touches.length===1 && this.state.dragging) {
