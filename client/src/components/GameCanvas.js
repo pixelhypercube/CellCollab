@@ -4,9 +4,9 @@ import cursorImgUrl from "../img/cursor.png";
 export default class GameCanvas extends React.Component {
     constructor(props) {
         super(props);
-        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverRange,hoverPosition,currentBrushBoard,activePlayers,playerSocketId} = this.props;
+        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId} = this.props;
         this.state = {
-            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverRange,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,
+            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,
             hoverCell: { row: null, col: null },
             scale:1,
             dragging:false,
@@ -55,8 +55,8 @@ export default class GameCanvas extends React.Component {
             });
         }
 
-        if (prevProps.hoverRange !== this.props.hoverRange) {
-            this.setState({hoverRange:this.props.hoverRange}, () => {
+        if (prevProps.hoverCells !== this.props.hoverCells) {
+            this.setState({hoverCells:this.props.hoverCells}, () => {
                 this.canvasRender();
             });
         }
@@ -228,32 +228,33 @@ export default class GameCanvas extends React.Component {
         const {board,cellWidth,cellHeight,scale,offset} = this.state;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         ctx.setTransform(scale, 0, 0, scale, offset.x, offset.y);
+
         if (board.length>0) {
             const n = board.length, m = board[0].length;
+
+            // player label & hovering info
+            let hoveringInfo = new Set();
+            if (this.props.activePlayers) {
+                for (let key of Object.keys(this.props.activePlayers)) {
+                    const {hoverCells} = this.props.activePlayers[key];
+                    // hover cells
+                    if (hoverCells) {
+                        for (let hoverInfo of hoverCells) {
+                            hoveringInfo.add(hoverInfo);
+                        }
+                    }
+                }
+            }
             
+            // drawing all cells normally
             for (let i = 0;i<n;i++) {
-                for (let j = 0;j<m;j++) {
-                    let neighborCount = 0;
-                    
+                for (let j = 0;j<m;j++) {                    
                     const xPos = j*cellWidth;
                     const yPos = i*cellHeight;
                     const isAlive = board[i][j] === 1;
-                    // let isHovering = this.props.hoverRange?.[i]?.[j] === 1;
-                    let isSelfHovering = this.props.hoverRange?.[i]?.[j] === 1;
-                    let isHovering;
-                    // test for all the hovering players
-                    let playerHoverInfo;
-                    if (this.props.activePlayers) {
-                        for (let key of Object.keys(this.props.activePlayers)) {
-                            if (this.props.activePlayers[key] && key!==this.props.playerSocketId) {
-                                playerHoverInfo = this.props.activePlayers[key].hoverRange;
-                                isHovering = playerHoverInfo?.[i]?.[j]===1 ? 1 : isHovering;
-                            }
-                        }
-                    }
 
+                    let neighborCount = 0;
                     // count neighbors
                     if (this.props.colorSchemeEnabled) {
                         if (i > 0 && j > 0 && board[i-1][j-1] === 1) neighborCount++;
@@ -267,17 +268,25 @@ export default class GameCanvas extends React.Component {
                         if (i < n-1 && board[i+1][j] === 1) neighborCount++;
                         if (i < n-1 && j < m-1 && board[i+1][j+1] === 1) neighborCount++;
                     }
+                    let isHovering = false;
+                    for (const hoverInfo of hoveringInfo) {
+                        const [y,x] = hoverInfo;
+                        if (i===y && x===j) isHovering = true;
+                    }
+                    const isSelfHovering = isHovering && this.state.activePlayers?.[this.state.playerSocketId]?.hoverCells?.some(([row, col]) => row === i && col === j);
 
                     this.printCell(xPos,yPos,isAlive,isHovering,isSelfHovering,neighborCount,ctx);
                 }
             }
-            
+
             if (this.props.activePlayers) {
                 for (let key of Object.keys(this.props.activePlayers)) {
                     if (this.props.activePlayers[key] && key!==this.props.playerSocketId) {
                         const {hoverPosition,username} = this.props.activePlayers[key];
+                        // label rendering
                         if (hoverPosition && username) {
                             const {x,y} = hoverPosition;
+                            console.log(x,y, "username: ",username)
                             this.renderPlayerLabel(x,y,12,username,ctx);
                         }
                     }
@@ -341,12 +350,11 @@ export default class GameCanvas extends React.Component {
         ctx.lineWidth = Math.min(this.state.scale * 0.25, 0.8);
         ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
 
-        if (isHovering) {
-            ctx.fillStyle = "rgba(127, 127, 127, 0.5)";
-            ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
-        }
         if (isSelfHovering) {
             ctx.fillStyle = "rgba(255, 127, 0, 0.5)";
+            ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
+        } else if (isHovering) {
+            ctx.fillStyle = "rgba(127, 127, 127, 0.5)";
             ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
         }
         ctx.strokeRect(xPos, yPos, cellWidth, cellHeight);

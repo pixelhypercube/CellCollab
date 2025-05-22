@@ -59,7 +59,7 @@ module.exports = function(io) {
                 rooms[roomId].activePlayers[socket.id] = {
                     username,
                     hoverPosition:null,
-                    hoverRange:[]
+                    hoverCells:[]
                 };
                 io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]); 
                 socket.emit("selfJoined",{
@@ -91,7 +91,7 @@ module.exports = function(io) {
                     rooms[roomId].activePlayers[socket.id] = {
                         username,
                         hoverPosition:null,
-                        hoverRange:[]
+                        hoverCells:[]
                     };
 
                     io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
@@ -136,7 +136,7 @@ module.exports = function(io) {
                     rooms[roomId].activePlayers[socket.id] = {
                         username,
                         hoverPosition:null,
-                        hoverRange:[]
+                        hoverCells:[]
                     };
                     io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
                     socket.emit("selfJoined",{
@@ -172,7 +172,7 @@ module.exports = function(io) {
                         rooms[roomId].activePlayers[socket.id] = {
                             username,
                             hoverPosition:null,
-                            hoverRange:[]
+                            hoverCells:[]
                         };
                         io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
                         socket.emit("selfJoined",{
@@ -213,7 +213,7 @@ module.exports = function(io) {
                         rooms[roomId].activePlayers[socket.id] = {
                             username,
                             hoverPosition:null,
-                            hoverRange:[]
+                            hoverCells:[]
                         };
                         io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
                         socket.emit("selfJoined",{
@@ -264,13 +264,13 @@ module.exports = function(io) {
             }
         });
 
-        socket.on("hoverCellBrush",(roomId, hoverRange, hoverPosition, socketId)=>{
+        socket.on("hoverCellBrush",(roomId, hoverCells, hoverPosition, socketId)=>{
             if (rooms[roomId]) {
                 if (rooms[roomId].activePlayers) {
                     if (rooms[roomId].activePlayers[socketId]) {
-                        rooms[roomId].activePlayers[socketId].hoverRange = hoverRange;
+                        rooms[roomId].activePlayers[socketId].hoverCells = hoverCells;
                         rooms[roomId].activePlayers[socketId].hoverPosition = hoverPosition;
-                        io.to(roomId).emit("updatePlayer",rooms[roomId].activePlayers);
+                        io.in(roomId).emit("updatePlayer",rooms[roomId].activePlayers);
                     }
                 }
             }

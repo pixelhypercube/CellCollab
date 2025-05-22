@@ -90,7 +90,7 @@ export class Game extends React.Component {
             currentBrush:"Default",// brush
             currentBrushBoard:[[1]],
             hoverPosition: null,
-            hoverRange: [],
+            hoverCells: [],
             activePlayers: [],
             fadeOut:false,
             darkMode:true,
@@ -170,7 +170,7 @@ export class Game extends React.Component {
             this.setState({
                 boardWidth,
                 boardHeight,
-                hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0))
+                hoverCells: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0))
             });
         });
 
@@ -275,7 +275,7 @@ export class Game extends React.Component {
         const newWidth = Number(e.target.value);
         this.setState({
             boardWidth: newWidth,
-            hoverRange: Array.from({ length: this.state.boardHeight },() => Array(newWidth).fill(0))
+            hoverCells: Array.from({ length: this.state.boardHeight },() => Array(newWidth).fill(0))
         });
     };
 
@@ -283,7 +283,7 @@ export class Game extends React.Component {
         const newHeight = Number(e.target.value);
         this.setState({
             boardHeight: newHeight,
-            hoverRange: Array.from({ length: newHeight },() => Array(this.state.boardWidth).fill(0))
+            hoverCells: Array.from({ length: newHeight },() => Array(this.state.boardWidth).fill(0))
         });
     };
 
@@ -303,7 +303,7 @@ export class Game extends React.Component {
                 if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight) && !this.isInvalidSize(speed)) {
                     socket.emit("joinRoomWithSettings",roomId,boardWidth,boardHeight,speed,username);
                     this.setState({ 
-                        hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
+                        hoverCells: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
                         boardWidth,
                         boardHeight,
                         speed,
@@ -379,7 +379,7 @@ export class Game extends React.Component {
                     boardHeight: 100,
                     speed: 100,
                     username,
-                    hoverRange: Array.from({ length: 100 },() => Array(100).fill(0))
+                    hoverCells: Array.from({ length: 100 },() => Array(100).fill(0))
                 });
             }
         } else { // without roomId
@@ -387,7 +387,7 @@ export class Game extends React.Component {
                 if (!this.isInvalidSize(boardWidth) && !this.isInvalidSize(boardHeight) && !this.isInvalidSize(speed)) {
                     socket.emit("joinRoomWithSettings","",boardWidth,boardHeight,speed,username);
                     this.setState({ 
-                        hoverRange: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
+                        hoverCells: Array.from({ length: boardHeight },() => Array(boardWidth).fill(0)),
                         boardWidth,
                         boardHeight,
                         speed,
@@ -463,7 +463,7 @@ export class Game extends React.Component {
                     boardHeight: 100,
                     speed:100,
                     username,
-                    hoverRange: Array.from({ length: 100 },() => Array(100).fill(0))
+                    hoverCells: Array.from({ length: 100 },() => Array(100).fill(0))
                 });
             }
 
@@ -515,21 +515,21 @@ export class Game extends React.Component {
         let currentBrushBoard = this.state.currentBrushBoard;
         let brushHeight = currentBrushBoard.length,brushWidth = currentBrushBoard[0].length;
         if (this.state.hoverPosition) {
-            let hoverRange = Array.from({length: this.state.boardHeight},() =>
+            let hoverCells = Array.from({length: this.state.boardHeight},() =>
                 Array(this.state.boardWidth).fill(0)
             );
             for (let di = i,idx = 0;di < i + brushHeight;di++,idx++) {
                 for (let dj = j,jdx = 0;dj < j + brushWidth;dj++,jdx++) {
                     if (
-                        di >= 0 && di < hoverRange.length &&
-                        dj >= 0 && dj < hoverRange[di].length &&
+                        di >= 0 && di < hoverCells.length &&
+                        dj >= 0 && dj < hoverCells[di].length &&
                         currentBrushBoard[idx][jdx] === 1
                     ) {
-                        hoverRange[di][dj] = 1;
+                        hoverCells[di][dj] = 1;
                     }
                 }
             }
-            this.setState({hoverRange});
+            this.setState({hoverCells});
         }
     }
 
@@ -708,7 +708,7 @@ export class Game extends React.Component {
                             cellHeight={this.state.cellHeight}
                             canvasMouseX={this.state.canvasMouseX}
                             canvasMouseY={this.state.canvasMouseY}
-                            hoverRange={this.state.hoverRange}
+                            hoverCells={this.state.hoverCells}
                             hoverPosition={this.state.hoverPosition}
                             currentBrushBoard={this.state.currentBrushBoard}
                             board={this.state.board}
@@ -762,9 +762,7 @@ export class Game extends React.Component {
                                 const brushWidth = brushBoard[0].length;
 
                                 // Create a new hover range
-                                const newHoverRange = Array.from({ length: this.state.board.length },() =>
-                                    Array(this.state.board[0].length).fill(0)
-                                );
+                                const newHoverCells = [];
 
                                 for (let di = 0; di < brushHeight; di++) {
                                     for (let dj = 0; dj < brushWidth; dj++) {
@@ -778,38 +776,47 @@ export class Game extends React.Component {
                                             boardJ < this.state.board[0].length &&
                                             brushBoard[di][dj] === 1
                                         ) {
-                                            newHoverRange[boardI][boardJ] = 1;
+                                            newHoverCells.push([boardI,boardJ]);
                                         }
                                     }
                                 }
                                 
                                 // only update the state if the hover range has changed
-                                const hoverChanged = JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverRange);
-                                const mouseMoved = adjustedX !== this.state.canvasMouseX || adjustedY !== this.state.canvasMouseY;
+                                // const hoverChanged = JSON.stringify(newHoverRange) !== JSON.stringify(this.state.hoverCells);
                                 
+                                const newHoverSet = new Set(newHoverCells.map(([i,j])=>`${i},${j}`));
+                                const oldHoverSet = new Set(this.state.hoverCells.map(([i,j])=>`${i},${j}`));
+
+                                let hoverChanged = newHoverSet.size !== oldHoverSet.size;
+                                const mouseMoved = adjustedX !== this.state.canvasMouseX || adjustedY !== this.state.canvasMouseY;
+
+                                if (!hoverChanged) {
+                                    for (let key of newHoverSet) {
+                                        if (!oldHoverSet.has(key)) {
+                                            hoverChanged = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
                                 if (hoverChanged || mouseMoved) {
                                     this.setState({
                                         hoverPosition:{x:adjustedX,y:adjustedY},
-                                        hoverRange: newHoverRange,
+                                        hoverCells:newHoverCells,
                                         canvasMouseX:adjustedX,
                                         canvasMouseY:adjustedY,
                                     });
                                     this.throttledEmitHover = throttle((newHoverRange,adjustedX,adjustedY)=>{
                                         socket.emit("hoverCellBrush", roomId, newHoverRange, { x: adjustedX, y: adjustedY }, this.state.playerSocketId);
                                     },250);
-                                    this.throttledEmitHover(newHoverRange,adjustedX,adjustedY);
+                                    this.throttledEmitHover(newHoverCells,adjustedX,adjustedY);
                                 }
 
                             }}
                             onMouseLeave={()=>{
-                                // Create a new hover range
-                                const newHoverRange = Array.from({ length: this.state.board.length },() =>
-                                    Array(this.state.board[0].length).fill(0)
-                                );
+                                this.setState({hoverPosition:null,hoverCells:[]});
 
-                                this.setState({hoverPosition:null,hoverRange:newHoverRange});
-
-                                socket.emit("hoverCellBrush",roomId,newHoverRange,null,this.state.playerSocketId);
+                                socket.emit("hoverCellBrush",roomId,[],null,this.state.playerSocketId);
                             }}
                             onTransformChange={this.handleTransformChange}
                             ></GameCanvas>
