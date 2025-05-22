@@ -105,7 +105,7 @@ export class Game extends React.Component {
 
             // brush pagination
             brushPage:0,
-            brushPageNames:["Defaults","Still Lifes","Oscillators","Spaceships","Perpetual Patterns","Others"],
+            brushPageNames:Object.keys(brushes),
             
 
             // canvas stuff
@@ -117,6 +117,8 @@ export class Game extends React.Component {
             canvasMouseY:0,
             offset:{x:0,y:0},
             scale:1,
+
+            gridEnabled:true,
 
             // color scheme
             colorSchemeEnabled:false,
@@ -612,7 +614,7 @@ export class Game extends React.Component {
                 {!isJoined ? (
                 <div className={`additional-settings-wrapper ${this.state.additionalOptionsEnabled ? 'open' : 'closed'}`}>
                     <Container className={darkMode ? "dark" : ""} id="join-room-container">
-                        <h4><u>Join/Create a Room</u></h4>
+                        <h3><u>Join/Create a Room</u></h3>
                         <Form>
                             <Form.Group controlId="formRoomId">
                                 <Form.Label style={{textAlign:"left"}} className="w-100">Room ID (Leave blank to create a new room):</Form.Label>
@@ -688,7 +690,7 @@ export class Game extends React.Component {
                                 </div> : <></>
                             }
                             <br></br>
-                            <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleJoinRoom}>
+                            <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleJoinRoom}>
                                 Join/Create Room
                             </Button>
                         </Form>
@@ -717,6 +719,7 @@ export class Game extends React.Component {
                             playerSocketId={this.state.playerSocketId}
                             colorSchemeEnabled={this.state.colorSchemeEnabled}
                             colorScheme={this.state.colorScheme}
+                            gridEnabled={this.state.gridEnabled}
                             onMouseDown={(e)=>{
                                 this.setState({mouseIsDown:true});
                             }}
@@ -841,13 +844,13 @@ export class Game extends React.Component {
                             </Container>
                             <br></br>
                             <Container className="d-flex" id="main-container">
-                                <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleToggleRun}>
+                                <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleToggleRun}>
                                     {isRunning ? "Pause" : "Play"}
                                 </Button>
-                                <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleStepOnce} disabled={isRunning}>
+                                <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleStepOnce} disabled={isRunning}>
                                     Step
                                 </Button>
-                                <Button className={darkMode ? "dark" : ""} variant="primary" onClick={this.handleReset}>
+                                <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleReset}>
                                     Reset
                                 </Button>
                             </Container>
@@ -856,7 +859,7 @@ export class Game extends React.Component {
                         <Col xl={4} lg={12} md={12} sm={12} xs={12} className="brush-preview-container">
                             <Container>
                             <Container className="d-flex flex-column justify-content-center align-items-center">
-                                <h4><u>Brush Preview</u></h4>
+                                <h3><u>Brush Preview</u></h3>
                                 <div style={{
                                     borderRadius:"10px",
                                     border:"2px solid white",
@@ -871,19 +874,21 @@ export class Game extends React.Component {
                                     ></BrushPreview>
                                 </div>
                                 <br></br>
-                                <h6>Rotation</h6>
+                                <h5>Rotation</h5>
                                 <Row className="mb-1">
-                                    <Col>
+                                    <Col style={{paddingRight:"5px"}}>
                                         <Button className={darkMode ? "dark" : ""} onClick={()=>{
                                             const matrix = this.state.currentBrushBoard;
                                             this.setState({currentBrushBoard:this.rotateMatrixClockwise(matrix)});
-                                        }} variant="primary">↻</Button>
+                                        }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                        style={{fontSize:"25px"}}>↻</Button>
                                     </Col>
-                                    <Col>
+                                    <Col style={{paddingLeft:"5px"}}>
                                         <Button className={darkMode ? "dark" : ""} onClick={()=>{
                                             const matrix = this.state.currentBrushBoard;
                                             this.setState({currentBrushBoard:this.rotateMatrixCounterClockwise(matrix)});
-                                        }} variant="primary">↺</Button>
+                                        }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                        style={{fontSize:"25px"}}>↺</Button>
                                     </Col>
                                 </Row>
                                 <hr style={{width:"50%"}}></hr>
@@ -891,14 +896,14 @@ export class Game extends React.Component {
                                 {/* WIP - Coming soon!!! */}
                                 {/* <Row className="mb-1">
                                     <Col>
-                                        <Button variant="primary">Prev</Button>
+                                        <Button variant={`outline-${darkMode ? "light" : "dark"}`}>Prev</Button>
                                     </Col>
                                     <Col>
-                                        <Button variant="primary">Next</Button>
+                                        <Button variant={`outline-${darkMode ? "light" : "dark"}`}>Next</Button>
                                     </Col>
                                 </Row> */}
                             </Container>
-                                <h4><u>Palette</u></h4>
+                                <h3><u>Palette</u></h3>
                                 {
                                     Object.entries(brushes).map(([categoryName,brushList],idx)=>{
                                         return (<Row key={categoryName} style={{display:brushPage===idx ? "flex" : "none"}}>
@@ -937,7 +942,7 @@ export class Game extends React.Component {
                                     {/* Previous Button */}
                                     <Button
                                         className={darkMode ? "dark" : ""}
-                                        variant="primary"
+                                        variant={`outline-${darkMode ? "light" : "dark"}`}
                                         onClick={() => {
                                             this.setState({ brushPage: brushPage === 0 ? brushPageNames.length - 1 : brushPage - 1 });
                                         }}
@@ -948,7 +953,7 @@ export class Game extends React.Component {
                                     {/* Next Button */}
                                     <Button
                                         className={darkMode ? "dark" : ""}
-                                        variant="primary"
+                                        variant={`outline-${darkMode ? "light" : "dark"}`}
                                         onClick={() => {
                                             this.setState({ brushPage: brushPage === brushPageNames.length - 1 ? 0 : brushPage + 1 });
                                         }}
@@ -965,8 +970,10 @@ export class Game extends React.Component {
                             <h3><u>Color Scheme</u></h3>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <Form.Check
-                                    style={{alignSelf:"center",marginBottom:"10px"}}
-                                    size={20}
+                                    style={{
+                                        alignSelf:"center",
+                                        marginBottom:"10px",
+                                    }}
                                     checked={this.state.colorSchemeEnabled}
                                     onChange={()=>this.setState({colorSchemeEnabled:!this.state.colorSchemeEnabled})}
                                     type="switch"
@@ -1036,9 +1043,31 @@ export class Game extends React.Component {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </Container>
+                            <hr style={{
+                                width:"80%",
+                                display:"flex",
+                                justifySelf:"center"
+                            }}></hr>
+                            <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                                <h3><u>Canvas Settings</u></h3>
+                                <Form.Check
+                                    style={{
+                                        alignSelf:"center",
+                                        marginBottom:"10px",
+                                    }}
+                                    checked={this.state.gridEnabled}
+                                    onChange={()=>this.setState({gridEnabled:!this.state.gridEnabled})}
+                                    type="switch"
+                                    label="Display Grid"
+                                />
+                            </Container>
                         </Col>
                     </Row>
-                    <br></br>
+                    <hr style={{
+                                width:"80%",
+                                display:"flex",
+                                justifySelf:"center"
+                            }}></hr>
                     <HowToPlay darkMode={darkMode}></HowToPlay>
                 </div>
                 )}

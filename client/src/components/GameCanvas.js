@@ -4,9 +4,9 @@ import cursorImgUrl from "../img/cursor.png";
 export default class GameCanvas extends React.Component {
     constructor(props) {
         super(props);
-        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId} = this.props;
+        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled} = this.props;
         this.state = {
-            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,
+            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,
             hoverCell: { row: null, col: null },
             scale:1,
             dragging:false,
@@ -85,6 +85,12 @@ export default class GameCanvas extends React.Component {
 
         if (prevProps.darkMode !== this.props.darkMode) {
             this.setState({darkMode:this.props.darkMode},()=>{
+                this.canvasRender();
+            });
+        }
+
+        if (prevProps.gridEnabled !== this.props.gridEnabled) {
+            this.setState({gridEnabled:this.props.gridEnabled},()=>{
                 this.canvasRender();
             });
         }
@@ -359,7 +365,7 @@ export default class GameCanvas extends React.Component {
             ctx.fillStyle = "rgba(127, 127, 127, 0.5)";
             ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
         }
-        ctx.strokeRect(xPos, yPos, cellWidth, cellHeight);
+        if (this.props.gridEnabled) ctx.strokeRect(xPos, yPos, cellWidth, cellHeight);
     }
 
     render() {

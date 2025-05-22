@@ -357,6 +357,143 @@ const brushes = {
             borderColorDark:"#8547ff",
         },
     ],
+    "Heptominoes":[
+        {
+            name: "Pi Heptomino",
+            board: [
+                [1,1,1],
+                [1,0,1],
+                [1,0,1],
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "E Heptomino",
+            board: [
+                [0,1,1,1],
+                [1,1,0,0],
+                [0,1,1,0]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "B Heptomino",
+            board: [
+                [1,0,1,1],
+                [1,1,1,0],
+                [0,1,0,0]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "R Heptomino",
+            board: [
+                [0,1,1],
+                [1,1,0],
+                [0,1,1]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "Bullet Heptomino",
+            board: [
+                [0,1,0],
+                [1,1,1],
+                [1,1,1]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "C Heptomino",
+            board: [
+                [0,1,1,1],
+                [1,1,1,0],
+                [0,1,0,0]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "Crinkly Heptomino",
+            board: [
+                [1,1,1,1,0],
+                [1,0,0,1,1]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "F Heptomino",
+            board: [
+                [1,1,0,0],
+                [0,1,0,0],
+                [0,1,0,0],
+                [0,1,1,1]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "H Heptomino",
+            board: [
+                [1,1,0,0],
+                [0,1,0,0],
+                [0,1,1,1],
+                [0,0,1,0]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "I Heptomino",
+            board: [
+                [1,1,0,0],
+                [0,1,0,0],
+                [0,1,1,0],
+                [0,0,1,1]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+        {
+            name: "Herschel",
+            board: [
+                [1,0,0],
+                [1,1,1],
+                [1,0,1],
+                [0,0,1]
+            ],
+            colorLight: "#c0ffee",
+            colorDark: "#003344",
+            borderColorLight: "#003344",
+            borderColorDark: "#c0ffee",
+        },
+    ],
     "Others":[
         {
             name:"Handshake",
@@ -365,42 +502,6 @@ const brushes = {
                 [0,1,0,1,1],
                 [1,1,0,1,0],
                 [0,1,1,0,0]
-            ],
-            colorLight:"#feccff",
-            colorDark:"#5a005c",
-            borderColorLight:"#5a005c",
-            borderColorDark:"#feccff",
-        },
-        {
-            name:"Pi Heptomino",
-            board:[
-                [1,1,1],
-                [1,0,1],
-                [1,0,1],
-            ],
-            colorLight:"#feccff",
-            colorDark:"#5a005c",
-            borderColorLight:"#5a005c",
-            borderColorDark:"#feccff",
-        },
-        {
-            name:"E Heptomino",
-            board:[
-                [0,1,1,1],
-                [1,1,0,0],
-                [0,1,1,0]
-            ],
-            colorLight:"#feccff",
-            colorDark:"#5a005c",
-            borderColorLight:"#5a005c",
-            borderColorDark:"#feccff",
-        },
-        {
-            name:"B Heptomino",
-            board:[
-                [1,0,1,1],
-                [1,1,1,0],
-                [0,1,0,0]
             ],
             colorLight:"#feccff",
             colorDark:"#5a005c",
