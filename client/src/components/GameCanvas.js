@@ -236,13 +236,11 @@ export default class GameCanvas extends React.Component {
             // player label & hovering info
             let hoveringInfo = new Set();
             if (this.props.activePlayers) {
-                for (let key of Object.keys(this.props.activePlayers)) {
-                    const {hoverCells} = this.props.activePlayers[key];
-                    // hover cells
-                    if (hoverCells) {
-                        for (let hoverInfo of hoverCells) {
-                            hoveringInfo.add(hoverInfo);
-                        }
+                const {hoverCells} = this.props.activePlayers;
+                // hover cells
+                if (hoverCells) {
+                    for (let hoverInfo of hoverCells) {
+                        hoveringInfo.add(hoverInfo);
                     }
                 }
             }
