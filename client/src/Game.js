@@ -806,8 +806,8 @@ export class Game extends React.Component {
                                         canvasMouseX:adjustedX,
                                         canvasMouseY:adjustedY,
                                     });
-                                    this.throttledEmitHover = throttle((newHoverRange,adjustedX,adjustedY)=>{
-                                        socket.emit("hoverCellBrush", roomId, newHoverRange, { x: adjustedX, y: adjustedY }, this.state.playerSocketId);
+                                    this.throttledEmitHover = throttle((newHoverCells,adjustedX,adjustedY)=>{
+                                        socket.emit("hoverCellBrush", roomId, newHoverCells, { x: adjustedX, y: adjustedY }, this.state.playerSocketId);
                                     },250);
                                     this.throttledEmitHover(newHoverCells,adjustedX,adjustedY);
                                 }

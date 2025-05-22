@@ -236,11 +236,14 @@ export default class GameCanvas extends React.Component {
             // player label & hovering info
             let hoveringInfo = new Set();
             if (this.props.activePlayers) {
-                const {hoverCells} = this.props.activePlayers;
-                // hover cells
-                if (hoverCells) {
-                    for (let hoverInfo of hoverCells) {
-                        hoveringInfo.add(hoverInfo);
+                for (let key of Object.keys(this.props.activePlayers)) {
+                    const {hoverCells} = this.props.activePlayers[key];
+
+                    // hover cells
+                    if (hoverCells) {
+                        for (let hoverInfo of hoverCells) {
+                            hoveringInfo.add(hoverInfo);
+                        }
                     }
                 }
             }
@@ -284,7 +287,6 @@ export default class GameCanvas extends React.Component {
                         // label rendering
                         if (hoverPosition && username) {
                             const {x,y} = hoverPosition;
-                            console.log(x,y, "username: ",username)
                             this.renderPlayerLabel(x,y,12,username,ctx);
                         }
                     }
