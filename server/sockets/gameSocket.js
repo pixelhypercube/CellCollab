@@ -9,9 +9,9 @@ module.exports = function(io) {
     
     const generateRoomId = (socketId) => {
         const timestamp = Date.now().toString();
-        const random = crypto.randomBytes(4).toString('hex'); // 8 chars
+        const random = crypto.randomBytes(4).toString('base64'); // 8 chars
         const raw = `${socketId}-${timestamp}-${random}`;
-        return crypto.createHash('sha256').update(raw).digest('hex').slice(0, 8); // 8-char room ID
+        return crypto.createHash('sha256').update(raw).digest('base64').slice(0, 8); // 8-char room ID
     };
 
     const generateRandomUsername = () => {
@@ -307,13 +307,15 @@ module.exports = function(io) {
             if (rooms[roomId]) {
                 const room = rooms[roomId];
                 room.speed = speed;
+
+                io.to(roomId).emit("speed", speed);
         
                 if (room.isRunning) {
                     clearInterval(room.intervalId);
                     room.intervalId = setInterval(() => {
                         room.board = gameOfLife(room.board);
                         io.to(roomId).emit("update", room.board);
-                        io.to(roomId).emit("iterations",++room.iterations);
+                        io.to(roomId).emit("iterations", ++room.iterations);
                     }, speed);
                 }
             }

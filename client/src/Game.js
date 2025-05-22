@@ -118,7 +118,9 @@ export class Game extends React.Component {
             offset:{x:0,y:0},
             scale:1,
 
+            // canvas settings
             gridEnabled:true,
+            adjNumbersEnabled:false,
 
             // color scheme
             colorSchemeEnabled:false,
@@ -720,6 +722,7 @@ export class Game extends React.Component {
                             colorSchemeEnabled={this.state.colorSchemeEnabled}
                             colorScheme={this.state.colorScheme}
                             gridEnabled={this.state.gridEnabled}
+                            adjNumbersEnabled={this.state.adjNumbersEnabled}
                             onMouseDown={(e)=>{
                                 this.setState({mouseIsDown:true});
                             }}
@@ -1059,6 +1062,16 @@ export class Game extends React.Component {
                                     onChange={()=>this.setState({gridEnabled:!this.state.gridEnabled})}
                                     type="switch"
                                     label="Display Grid"
+                                />
+                                <Form.Check
+                                    style={{
+                                        alignSelf:"center",
+                                        marginBottom:"10px",
+                                    }}
+                                    checked={this.state.adjNumbersEnabled}
+                                    onChange={()=>this.setState({adjNumbersEnabled:!this.state.adjNumbersEnabled})}
+                                    type="switch"
+                                    label="Display Adjacent Numbers"
                                 />
                             </Container>
                         </Col>

@@ -94,6 +94,12 @@ export default class GameCanvas extends React.Component {
                 this.canvasRender();
             });
         }
+
+        if (prevProps.adjNumbersEnabled !== this.props.adjNumbersEnabled) {
+            this.setState({adjNumbersEnabled:this.props.adjNumbersEnabled},()=>{
+                this.canvasRender();
+            });
+        }
     }
 
     // TOUCH EVENTS
@@ -265,18 +271,16 @@ export default class GameCanvas extends React.Component {
 
                     let neighborCount = 0;
                     // count neighbors
-                    if (this.props.colorSchemeEnabled) {
-                        if (i > 0 && j > 0 && board[i-1][j-1] === 1) neighborCount++;
-                        if (i > 0 && board[i-1][j] === 1) neighborCount++;
-                        if (i > 0 && j < m-1 && board[i-1][j+1] === 1) neighborCount++;
+                    if (i > 0 && j > 0 && board[i-1][j-1] === 1) neighborCount++;
+                    if (i > 0 && board[i-1][j] === 1) neighborCount++;
+                    if (i > 0 && j < m-1 && board[i-1][j+1] === 1) neighborCount++;
 
-                        if (j > 0 && board[i][j-1] === 1) neighborCount++;
-                        if (j < m-1 && board[i][j+1] === 1) neighborCount++;
+                    if (j > 0 && board[i][j-1] === 1) neighborCount++;
+                    if (j < m-1 && board[i][j+1] === 1) neighborCount++;
 
-                        if (i < n-1 && j > 0 && board[i+1][j-1] === 1) neighborCount++;
-                        if (i < n-1 && board[i+1][j] === 1) neighborCount++;
-                        if (i < n-1 && j < m-1 && board[i+1][j+1] === 1) neighborCount++;
-                    }
+                    if (i < n-1 && j > 0 && board[i+1][j-1] === 1) neighborCount++;
+                    if (i < n-1 && board[i+1][j] === 1) neighborCount++;
+                    if (i < n-1 && j < m-1 && board[i+1][j+1] === 1) neighborCount++;
                     let isHovering = false;
                     for (const hoverInfo of hoveringInfo) {
                         const [y,x] = hoverInfo;
@@ -366,6 +370,13 @@ export default class GameCanvas extends React.Component {
             ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
         }
         if (this.props.gridEnabled) ctx.strokeRect(xPos, yPos, cellWidth, cellHeight);
+        if (this.props.adjNumbersEnabled) {
+            if (isAlive) ctx.fillStyle = this.props.darkMode ? "black" : "white";
+            else ctx.fillStyle = this.props.darkMode ? "white" : "black";
+            ctx.font = `20px Rubik`;
+            ctx.textAlign="center";
+            ctx.fillText(numNeighbors, xPos + (cellWidth / 2), yPos + (cellHeight/1.33));
+        }
     }
 
     render() {
