@@ -12,6 +12,7 @@ import throttle from "lodash.throttle";
 import NumberContainer from "./components/NumberContainer";
 import HowToPlay from "./components/HowToPlay";
 import brushes from "./brushList.js";
+import EditBrushModal from "./components/EditBrushModal.js";
 
 const MySwal = withReactContent(Swal);
 
@@ -126,6 +127,12 @@ export class Game extends React.Component {
             colorSchemeEnabled:false,
             selectedColorScheme:"default",
             colorScheme:this.colorSchemesList["default"], // default selected first
+
+
+            // edit modal
+            editModalOpened:false,
+            modalCellWidth:20,
+            modalCellHeight:20,
 
             // transform keys
             // scale:1,
@@ -602,7 +609,7 @@ export class Game extends React.Component {
     }
 
     render() {
-    const { additionalOptionsEnabled,board,isRunning,username,roomId,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames } = this.state;
+    const { additionalOptionsEnabled,board,isRunning,username,roomId,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames,modalCellHeight,modalCellWidth } = this.state;
 
     return (
         <div>
@@ -863,6 +870,12 @@ export class Game extends React.Component {
                             <Container>
                             <Container className="d-flex flex-column justify-content-center align-items-center">
                                 <h3><u>Brush Preview</u></h3>
+                                <Button 
+                                className={darkMode ? "dark" : ""}
+                                onClick={()=>this.setState({editModalOpened:true})}
+                                variant={`outline-${darkMode ? "light" : "dark"}`}
+                                >Edit Brush</Button>
+                                <br></br>
                                 <div style={{
                                     borderRadius:"10px",
                                     border:"2px solid white",
@@ -877,6 +890,19 @@ export class Game extends React.Component {
                                     ></BrushPreview>
                                 </div>
                                 <br></br>
+                                <EditBrushModal 
+                                cellWidth={modalCellWidth}
+                                cellHeight={modalCellHeight}
+                                darkMode={darkMode}
+                                show={this.state.editModalOpened}
+                                currentBrushBoard={this.state.currentBrushBoard}
+                                onClose={()=>{
+                                    this.setState({editModalOpened:false});
+                                }}
+                                onSave={(currentBrushBoard)=>{
+                                    this.setState({currentBrushBoard});
+                                }}
+                                ></EditBrushModal>
                                 <h5>Rotation</h5>
                                 <Row className="mb-1">
                                     <Col style={{paddingRight:"5px"}}>
