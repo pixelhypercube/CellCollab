@@ -1,6 +1,8 @@
 import React from "react";
 import {Modal,Container,Row,Col,Button, Form} from "react-bootstrap";
 import { FaEraser, FaPen } from "react-icons/fa";
+import cursorEraser from "../img/eraser.png";
+import cursorPencil from "../img/pencil.png";
 
 export default class EditBrushModal extends React.Component {
     constructor(props) {
@@ -23,7 +25,8 @@ export default class EditBrushModal extends React.Component {
             originalCellHeight: this.props.cellHeight,
 
             mouseIsDown: false,
-            penState:1, // 0 - erase, 1 - on
+            penState:1, // 0 - erase, 1 - pen
+            penStateUrls:[cursorEraser,cursorPencil],
             penStateNames:["Eraser","Draw"],
 
             // modal tingies
@@ -392,7 +395,8 @@ export default class EditBrushModal extends React.Component {
                 <style>
                     {`.modal-content {
                         width:${Math.max(canvasWidth+cellWidth,600)}px
-                    }`}
+                    }
+                    `}
                 </style>
                 <Modal show={show} 
                 onHide={()=>{
@@ -429,6 +433,7 @@ export default class EditBrushModal extends React.Component {
                                 width:`${canvasWidth}px`,
                                 height:`${canvasHeight}px`,
                                 border:`2px solid grey`,
+                                cursor: `url(${this.state.penStateUrls[this.state.penState]}) 0 32, auto`
                             }}
                             onMouseMove={(e)=>{
                                 this.handleMouseMoveOrDown(e);
