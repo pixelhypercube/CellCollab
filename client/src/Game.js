@@ -118,10 +118,13 @@ export class Game extends React.Component {
             canvasMouseY:0,
             offset:{x:0,y:0},
             scale:1,
+            blobEnabled:false,
 
             // canvas settings
             gridEnabled:true,
             adjNumbersEnabled:false,
+            jitterScale:2,
+            randomSeedEnabled:false,
 
             // color scheme
             colorSchemeEnabled:false,
@@ -730,6 +733,9 @@ export class Game extends React.Component {
                             colorScheme={this.state.colorScheme}
                             gridEnabled={this.state.gridEnabled}
                             adjNumbersEnabled={this.state.adjNumbersEnabled}
+                            blobEnabled={this.state.blobEnabled}
+                            jitterScale={this.state.jitterScale}
+                            randomSeedEnabled={this.state.randomSeedEnabled}
                             onMouseDown={(e)=>{
                                 this.setState({mouseIsDown:true});
                             }}
@@ -1099,6 +1105,31 @@ export class Game extends React.Component {
                                     type="switch"
                                     label="Display Adjacent Numbers"
                                 />
+                                <Form.Check
+                                        style={{
+                                            alignSelf:"center",
+                                            marginBottom:"10px",
+                                        }}
+                                        checked={this.state.blobEnabled}
+                                        onChange={()=>this.setState({blobEnabled:!this.state.blobEnabled})}
+                                        type="switch"
+                                        label="Enable Blob Rendering (Beta)"
+                                    />
+                                <Form.Check
+                                        style={{
+                                            alignSelf:"center",
+                                            marginBottom:"10px",
+                                        }}
+                                        checked={this.state.randomSeedEnabled}
+                                        onChange={()=>this.setState({randomSeedEnabled:!this.state.randomSeedEnabled})}
+                                        type="switch"
+                                        label="Random Seed (Blob)"
+                                        disabled={!this.state.blobEnabled}
+                                    />
+                                    <Form.Range min={0} max={10} value={this.state.jitterScale} onChange={(e)=>{
+                                    this.setState({jitterScale:e.target.value});
+                                }} step={0.01} style={{width:"80%",alignSelf:"center"}} disabled={!this.state.blobEnabled} />
+                                <Form.Label disabled={!this.state.blobEnabled} style={{fontSize:"20px"}}>Jitter Scale: <strong>{this.state.jitterScale}</strong></Form.Label>
                             </Container>
                         </Col>
                     </Row>

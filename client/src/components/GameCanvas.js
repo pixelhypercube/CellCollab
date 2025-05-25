@@ -4,9 +4,9 @@ import cursorImgUrl from "../img/cursor.png";
 export default class GameCanvas extends React.Component {
     constructor(props) {
         super(props);
-        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled} = this.props;
+        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,jitterScale,randomSeedEnabled} = this.props;
         this.state = {
-            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,
+            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,jitterScale,randomSeedEnabled,
             hoverCell: { row: null, col: null },
             scale:1,
             dragging:false,
@@ -99,6 +99,24 @@ export default class GameCanvas extends React.Component {
             this.setState({adjNumbersEnabled:this.props.adjNumbersEnabled},()=>{
                 this.canvasRender();
             });
+        }
+
+        if (prevProps.blobEnabled !== this.props.blobEnabled) {
+            this.setState({blobEnabled:this.props.blobEnabled},()=>{
+                this.canvasRender();
+            });
+        }
+
+        if (prevProps.jitterScale !== this.props.jitterScale) {
+            this.setState({jitterScale:this.props.jitterScale},()=>{
+                this.canvasRender();
+            })
+        }
+
+        if (prevProps.randomSeedEnabled !== this.props.randomSeedEnabled) {
+            this.setState({randomSeedEnabled:this.props.randomSeedEnabled},()=>{
+                this.canvasRender();
+            })
         }
     }
 
@@ -288,7 +306,7 @@ export default class GameCanvas extends React.Component {
                     }
                     const isSelfHovering = isHovering && this.state.activePlayers?.[this.state.playerSocketId]?.hoverCells?.some(([row, col]) => row === i && col === j);
 
-                    this.printCell(xPos,yPos,isAlive,isHovering,isSelfHovering,neighborCount,ctx);
+                    this.printCell(xPos,yPos,i,j,isAlive,isHovering,isSelfHovering,neighborCount,ctx);
                 }
             }
 
@@ -334,7 +352,129 @@ export default class GameCanvas extends React.Component {
         }
     }
 
-    printCell = (xPos,yPos,isAlive,isHovering,isSelfHovering,numNeighbors,ctx) => {
+    hash = (x, y, seed = 0) => {
+        const dot = x * 12.9898 + y * 78.233 + seed * 43758.5453;
+        return Math.abs(Math.sin(dot)) % 1;
+    };
+    
+    jitter = (x, y, scale = this.state.jitterScale) => {
+        const rand = this.props.randomSeedEnabled
+            ? Math.random()
+            : this.hash(x, y, this.props.seed || 0);
+        return (rand - 0.5) * 2 * scale;
+    };
+    
+
+    drawJitteringBlobbyCell = (ctx, x, y, size, neighbors) => {
+        const r = size * 0.5;
+        const {top,right,bottom,left} = neighbors;
+        const adjSum = top+right+bottom+left;
+
+        // jittering helper
+        const jx = (x, y, scale) => x + this.jitter(x, y, scale);
+        const jy = (x, y, scale) => y + this.jitter(y, x, scale);
+    
+        ctx.beginPath();
+
+        if (adjSum === 0) {
+            ctx.lineTo(jx(x + r, y), jy(x + r, y));
+            ctx.quadraticCurveTo(jx(x + r * 2, y), jy(x + r * 2, y), jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+            ctx.quadraticCurveTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2), jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+            ctx.quadraticCurveTo(jx(x, y + r * 2), jy(x, y + r * 2), jx(x, y + r), jy(x, y + r));
+            ctx.quadraticCurveTo(jx(x, y), jy(x, y), jx(x + r, y), jy(x + r, y));
+        }
+        else if (adjSum === 1) {
+            if (top === 1) {
+                ctx.lineTo(jx(x, y), jy(x, y));
+                ctx.lineTo(jx(x + r * 2, y), jy(x + r * 2, y));
+                ctx.lineTo(jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+                ctx.quadraticCurveTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2), jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+                ctx.quadraticCurveTo(jx(x, y + r * 2), jy(x, y + r * 2), jx(x, y + r), jy(x, y + r));
+            } else if (right === 1) {
+                ctx.lineTo(jx(x + r * 2, y), jy(x + r * 2, y));
+                ctx.lineTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2));
+                ctx.lineTo(jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+                ctx.quadraticCurveTo(jx(x, y + r * 2), jy(x, y + r * 2), jx(x, y + r), jy(x, y + r));
+                ctx.quadraticCurveTo(jx(x, y), jy(x, y), jx(x + r, y), jy(x + r, y));
+            } else if (bottom === 1) {
+                ctx.lineTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2));
+                ctx.lineTo(jx(x, y + r * 2), jy(x, y + r * 2));
+                ctx.lineTo(jx(x, y + r), jy(x, y + r));
+                ctx.quadraticCurveTo(jx(x, y), jy(x, y), jx(x + r, y), jy(x + r, y));
+                ctx.quadraticCurveTo(jx(x + r * 2, y), jy(x + r * 2, y), jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+            } else if (left === 1) {
+                ctx.lineTo(jx(x, y + r * 2), jy(x, y + r * 2));
+                ctx.lineTo(jx(x, y), jy(x, y));
+                ctx.lineTo(jx(x + r, y), jy(x + r, y));
+                ctx.quadraticCurveTo(jx(x + r * 2, y), jy(x + r * 2, y), jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+                ctx.quadraticCurveTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2), jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+            }
+        }
+        else if (adjSum === 2) {
+            if (bottom === 1 && left === 1) {
+                ctx.lineTo(jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+                ctx.lineTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2));
+                ctx.lineTo(jx(x, y + r * 2), jy(x, y + r * 2));
+                ctx.lineTo(jx(x, y), jy(x, y));
+                ctx.lineTo(jx(x + r, y), jy(x + r, y));
+                ctx.quadraticCurveTo(jx(x + r * 2, y), jy(x + r * 2, y), jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+            } else if (bottom === 1 && right === 1) {
+                ctx.lineTo(jx(x + r, y), jy(x + r, y));
+                ctx.lineTo(jx(x + r * 2, y), jy(x + r * 2, y));
+                ctx.lineTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2));
+                ctx.lineTo(jx(x, y + r * 2), jy(x, y + r * 2));
+                ctx.lineTo(jx(x, y + r), jy(x, y + r));
+                ctx.quadraticCurveTo(jx(x, y), jy(x, y), jx(x + r, y), jy(x + r, y));
+            } else if (top === 1 && left === 1) {
+                ctx.lineTo(jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+                ctx.lineTo(jx(x, y + r * 2), jy(x, y + r * 2));
+                ctx.lineTo(jx(x, y), jy(x, y));
+                ctx.lineTo(jx(x + r * 2, y), jy(x + r * 2, y));
+                ctx.lineTo(jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+                ctx.quadraticCurveTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2), jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+            } else if (top === 1 && right === 1) {
+                ctx.lineTo(jx(x, y + r), jy(x, y + r));
+                ctx.lineTo(jx(x, y), jy(x, y));
+                ctx.lineTo(jx(x + r * 2, y), jy(x + r * 2, y));
+                ctx.lineTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2));
+                ctx.lineTo(jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+                ctx.quadraticCurveTo(jx(x, y + r * 2), jy(x, y + r * 2), jx(x, y + r), jy(x, y + r));
+            } else {
+                ctx.lineTo(jx(x, y), jy(x, y));
+                ctx.lineTo(jx(x + r, y), jy(x + r, y));
+                ctx.lineTo(jx(x + r * 2, y), jy(x + r * 2, y));
+                ctx.lineTo(jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+                ctx.lineTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2));
+                ctx.lineTo(jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+                ctx.lineTo(jx(x, y + r * 2), jy(x, y + r * 2));
+                ctx.lineTo(jx(x, y + r), jy(x, y + r));
+            }
+        }
+        else if (adjSum === 3 || adjSum === 4) {
+            ctx.lineTo(jx(x, y), jy(x, y));
+            ctx.lineTo(jx(x + r, y), jy(x + r, y));
+            ctx.lineTo(jx(x + r * 2, y), jy(x + r * 2, y));
+            ctx.lineTo(jx(x + r * 2, y + r), jy(x + r * 2, y + r));
+            ctx.lineTo(jx(x + r * 2, y + r * 2), jy(x + r * 2, y + r * 2));
+            ctx.lineTo(jx(x + r, y + r * 2), jy(x + r, y + r * 2));
+            ctx.lineTo(jx(x, y + r * 2), jy(x, y + r * 2));
+            ctx.lineTo(jx(x, y + r), jy(x, y + r));
+        }
+        
+
+        ctx.closePath();
+        ctx.fill();
+    };
+    
+    isCellAliveAt = (j,i) => {
+        const {board} = this.state;
+        const n = board.length, m = board[0].length;
+
+        if (j<0 || i<0 || j>m-1 || i>n-1) return 0;
+        return board[i][j];
+    }
+
+    printCell = (xPos,yPos,i,j,isAlive,isHovering,isSelfHovering,numNeighbors,ctx) => {
         let { cellWidth, cellHeight, darkMode, colorScheme } = this.state;
         let fill, stroke;
 
@@ -360,7 +500,21 @@ export default class GameCanvas extends React.Component {
         ctx.fillStyle = fill;
         ctx.strokeStyle = stroke;
         ctx.lineWidth = Math.min(this.state.scale * 0.25, 0.8);
-        ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
+        if (this.props.blobEnabled) {
+            if (isAlive) {
+                const neighbors = {
+                    top: this.isCellAliveAt(j, i - 1),
+                    bottom: this.isCellAliveAt(j, i + 1),
+                    left: this.isCellAliveAt(j - 1, i),
+                    right: this.isCellAliveAt(j + 1, i),
+                };
+                
+                
+                this.drawJitteringBlobbyCell(ctx, xPos, yPos, cellWidth, neighbors);
+                // this.drawSmoothBlobbyCell(ctx, xPos, yPos, cellWidth, neighbors);
+            }
+        }
+        else ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
 
         if (isSelfHovering) {
             ctx.fillStyle = "rgba(255, 127, 0, 0.5)";
