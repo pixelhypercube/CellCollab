@@ -44,79 +44,32 @@ export default class GameCanvas extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (prevProps.board !== this.props.board || prevProps.darkMode !== this.props.darkMode) {
-            this.setState({board:this.props.board,darkMode:this.props.darkMode}, () => {
-                this.canvasRender();
-            });
-        }
-        else if (prevProps.cellWidth !== this.props.cellWidth || prevProps.cellHeight !== this.props.cellHeight) {
-            this.setState({cellWidth:this.props.cellWidth,cellHeight:this.props.cellHeight}, () => {
-                this.canvasRender();
-            });
-        }
+        const stateUpdates = {};
+        let shouldRender = false;
 
-        if (prevProps.hoverCells !== this.props.hoverCells) {
-            this.setState({hoverCells:this.props.hoverCells}, () => {
-                this.canvasRender();
-            });
-        }
-        
-        if (prevProps.activePlayers !== this.props.activePlayers) {
-            this.setState({activePlayers:this.props.activePlayers},()=>{
-                this.canvasRender();
-            });
-        }
+        const propsToWatchWithRender = [
+            "board", "darkMode", "cellWidth", "cellHeight",
+            "hoverCells", "activePlayers", "colorSchemeEnabled",
+            "colorScheme", "gridEnabled", "adjNumbersEnabled",
+            "blobEnabled", "jitterScale", "randomSeedEnabled"
+        ];
+
+        propsToWatchWithRender.forEach((key) => {
+            if (prevProps[key] !== this.props[key]) {
+                stateUpdates[key] = this.props[key];
+                shouldRender = true;
+            }
+        });
 
         if (prevProps.playerSocketId !== this.props.playerSocketId) {
-            this.setState({playerSocketId:this.props.playerSocketId});
+            stateUpdates.playerSocketId = this.props.playerSocketId;
+            // no render needed
         }
 
-        if (prevProps.colorSchemeEnabled !== this.props.colorSchemeEnabled) {
-            this.setState({colorSchemeEnabled:this.props.colorSchemeEnabled},()=>{
-                this.canvasRender();
+        if (Object.keys(stateUpdates).length > 0) {
+            this.setState(stateUpdates, () => {
+                if (shouldRender) this.canvasRender();
             });
-        }
-
-        if (prevProps.colorScheme !== this.props.colorScheme) {
-            this.setState({colorScheme:this.props.colorScheme},()=>{
-                this.canvasRender();
-            });
-        }
-
-        if (prevProps.darkMode !== this.props.darkMode) {
-            this.setState({darkMode:this.props.darkMode},()=>{
-                this.canvasRender();
-            });
-        }
-
-        if (prevProps.gridEnabled !== this.props.gridEnabled) {
-            this.setState({gridEnabled:this.props.gridEnabled},()=>{
-                this.canvasRender();
-            });
-        }
-
-        if (prevProps.adjNumbersEnabled !== this.props.adjNumbersEnabled) {
-            this.setState({adjNumbersEnabled:this.props.adjNumbersEnabled},()=>{
-                this.canvasRender();
-            });
-        }
-
-        if (prevProps.blobEnabled !== this.props.blobEnabled) {
-            this.setState({blobEnabled:this.props.blobEnabled},()=>{
-                this.canvasRender();
-            });
-        }
-
-        if (prevProps.jitterScale !== this.props.jitterScale) {
-            this.setState({jitterScale:this.props.jitterScale},()=>{
-                this.canvasRender();
-            })
-        }
-
-        if (prevProps.randomSeedEnabled !== this.props.randomSeedEnabled) {
-            this.setState({randomSeedEnabled:this.props.randomSeedEnabled},()=>{
-                this.canvasRender();
-            })
         }
     }
 
