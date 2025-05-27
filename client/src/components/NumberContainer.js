@@ -14,8 +14,9 @@ export default class NumberContainer extends React.Component {
         return (
             <div className={"number-container "+((this.props.darkMode) ? "dark" : "")}>
                 <h6>{this.props.title}</h6>
-                <div className="number-display">
-                    <h3>{this.props.number}</h3>
+                <div style={{height:"60px"}} className="number-display">
+                    <h4>{this.props.number}</h4>
+                    <h6>{this.props.subtitle}</h6>
                 </div>
             </div>
         );

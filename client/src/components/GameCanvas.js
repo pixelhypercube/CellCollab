@@ -4,9 +4,9 @@ import cursorImgUrl from "../img/cursor.png";
 export default class GameCanvas extends React.Component {
     constructor(props) {
         super(props);
-        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,jitterScale,randomSeedEnabled} = this.props;
+        var {canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,jitterScale,randomSeedEnabled,gradientModeEnabled} = this.props;
         this.state = {
-            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,jitterScale,randomSeedEnabled,
+            canvasWidth,canvasHeight,cellWidth,cellHeight,board,darkMode,hoverCells,hoverPosition,currentBrushBoard,activePlayers,playerSocketId,gridEnabled,jitterScale,randomSeedEnabled,gradientModeEnabled,
             hoverCell: { row: null, col: null },
             scale:1,
             dragging:false,
@@ -51,7 +51,7 @@ export default class GameCanvas extends React.Component {
             "board", "darkMode", "cellWidth", "cellHeight",
             "hoverCells", "activePlayers", "colorSchemeEnabled",
             "colorScheme", "gridEnabled", "adjNumbersEnabled",
-            "blobEnabled", "jitterScale", "randomSeedEnabled"
+            "blobEnabled", "jitterScale", "randomSeedEnabled","gradientModeEnabled",
         ];
 
         propsToWatchWithRender.forEach((key) => {
@@ -204,6 +204,25 @@ export default class GameCanvas extends React.Component {
         }, this.canvasRender);
     };
 
+    getAdjacentCellsCount = (i,j) => {
+        const {board} = this.state;
+        const n = board.length, m = board[0].length;
+
+        let count = 0;
+        if (i > 0 && j > 0 && board[i-1][j-1] === 1) count++;
+        if (i > 0 && board[i-1][j] === 1) count++;
+        if (i > 0 && j < m-1 && board[i-1][j+1] === 1) count++;
+
+        if (j > 0 && board[i][j-1] === 1) count++;
+        if (j < m-1 && board[i][j+1] === 1) count++;
+
+        if (i < n-1 && j > 0 && board[i+1][j-1] === 1) count++;
+        if (i < n-1 && board[i+1][j] === 1) count++;
+        if (i < n-1 && j < m-1 && board[i+1][j+1] === 1) count++;
+
+        return count;
+    }
+
     canvasRender = () => {
         const canvas = this.canvasRef.current;
         const ctx = canvas.getContext("2d");
@@ -240,18 +259,7 @@ export default class GameCanvas extends React.Component {
                     const yPos = i*cellHeight;
                     const isAlive = board[i][j] === 1;
 
-                    let neighborCount = 0;
-                    // count neighbors
-                    if (i > 0 && j > 0 && board[i-1][j-1] === 1) neighborCount++;
-                    if (i > 0 && board[i-1][j] === 1) neighborCount++;
-                    if (i > 0 && j < m-1 && board[i-1][j+1] === 1) neighborCount++;
-
-                    if (j > 0 && board[i][j-1] === 1) neighborCount++;
-                    if (j < m-1 && board[i][j+1] === 1) neighborCount++;
-
-                    if (i < n-1 && j > 0 && board[i+1][j-1] === 1) neighborCount++;
-                    if (i < n-1 && board[i+1][j] === 1) neighborCount++;
-                    if (i < n-1 && j < m-1 && board[i+1][j+1] === 1) neighborCount++;
+                    let neighborCount = this.getAdjacentCellsCount(i,j);
                     let isHovering = false;
                     for (const hoverInfo of hoveringInfo) {
                         const [y,x] = hoverInfo;
@@ -427,6 +435,49 @@ export default class GameCanvas extends React.Component {
         return board[i][j];
     }
 
+    printGradientCell = (x,y,i,j,innerColor,ctx) => {
+        let { cellWidth, cellHeight, colorScheme } = this.state;
+
+        const offset = [
+            [0, 0],                   // top-left
+            [cellWidth / 2, 0],           // top-center
+            [cellWidth, 0],               // top-right
+            [0,cellHeight / 2],          // middle-left
+            [cellWidth, cellHeight / 2],      // middle-right
+            [0,cellHeight],              // bottom-left
+            [cellWidth / 2, cellHeight],      // bottom-center
+            [cellWidth, cellHeight]           // bottom-right
+        ];
+
+        // adj count list
+        
+        const adjsList = [
+            this.getAdjacentCellsCount(i-1,j-1), // top-left
+            this.getAdjacentCellsCount(i-1,j),   // top-center
+            this.getAdjacentCellsCount(i-1,j+1), // top-right
+            this.getAdjacentCellsCount(i,j-1),   // middle-left
+            this.getAdjacentCellsCount(i,j+1),   // middle-right
+            this.getAdjacentCellsCount(i+1,j-1), // bottom-left
+            this.getAdjacentCellsCount(i+1,j),   // bottom-center
+            this.getAdjacentCellsCount(i+1,j+1)  // bottom-right
+        ];
+
+        const colors = colorScheme.map((color,idx)=>[color,innerColor]);
+        offset.forEach((pos, idx) => {
+            const r = Math.min(cellWidth, cellHeight);
+            const [dx, dy] = pos;
+            const gradient = ctx.createRadialGradient(x+dx, y+dy, 0, x+dx, y+dy, r);
+
+            const [innerColor, outerColor] = colors[adjsList[idx]];
+            gradient.addColorStop(0, innerColor);
+            gradient.addColorStop(1, outerColor);
+            ctx.fillStyle = gradient;
+            ctx.globalAlpha = 0.5;
+            ctx.fillRect(x, y, cellWidth, cellHeight);
+        });
+        ctx.globalAlpha = 1;
+    }
+
     printCell = (xPos,yPos,i,j,isAlive,isHovering,isSelfHovering,numNeighbors,ctx) => {
         let { cellWidth, cellHeight, darkMode, colorScheme } = this.state;
         let fill, stroke;
@@ -467,7 +518,12 @@ export default class GameCanvas extends React.Component {
                 // this.drawSmoothBlobbyCell(ctx, xPos, yPos, cellWidth, neighbors);
             }
         }
-        else ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
+        else {
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = stroke;
+            ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
+            if (this.state.gradientModeEnabled && isAlive) this.printGradientCell(xPos, yPos, i, j, fill+"00", ctx);
+        }
 
         if (isSelfHovering) {
             ctx.fillStyle = "rgba(255, 127, 0, 0.5)";
@@ -499,6 +555,7 @@ export default class GameCanvas extends React.Component {
             onClick={this.props.onClick} 
             onMouseUp={this.props.onMouseUp}
             onMouseLeave={this.props.onMouseLeave}
+            onMouseEnter={this.props.onMouseEnter}
             width={canvasWidth} 
             height={canvasHeight} 
             ref={this.canvasRef}></canvas>

@@ -1,8 +1,9 @@
 import React from "react";
 import {Modal,Container,Row,Col,Button, Form} from "react-bootstrap";
-import { FaEraser, FaPen } from "react-icons/fa";
+import { FaCopy, FaEraser, FaPen, FaSave, FaTimes } from "react-icons/fa";
 import cursorEraser from "../img/eraser.png";
 import cursorPencil from "../img/pencil.png";
+import Swal from "sweetalert2";
 
 export default class EditBrushModal extends React.Component {
     constructor(props) {
@@ -385,6 +386,28 @@ export default class EditBrushModal extends React.Component {
             this.handleUpdateCanvasSize();
         });
     }
+
+    handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(`[${this.state.currentBrushBoard.map(row => `[${row.join(",")}]`).join(",\n")}]`);
+            Swal.fire({
+                toast: true,
+                icon: "success",
+                title: "Copied to clipboard!",
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 1500
+            });
+        } catch (err) {
+            Swal.fire({
+                icon: "error",
+                title: "Copy failed",
+                toast: true,
+                position:"top-end",
+                text: err.message
+            });
+        }
+    }
     
     render() {
         const {currentBrushBoard,darkMode,show,cellWidth,cellHeight,penState} = this.state;
@@ -630,17 +653,18 @@ export default class EditBrushModal extends React.Component {
                             </Container>
                         </Modal.Body>
                         <Modal.Footer className={darkMode ? "bg-dark text-light" : ""}>
-                            <Button variant="secondary" onClick={()=>{
+                            <Button variant="success" onClick={this.handleCopy}><FaCopy/> Copy Matrix Data</Button>
+                            <Button variant="danger" onClick={()=>{
                                 if (this.state.hasUnsavedChanges) {
                                     if (!window.confirm("Discard changes?")) return;
                                 }
                                 this.props.onClose();
-                            }}>Close (Discard Changes)</Button>
+                            }}><FaTimes/> Close (Discard Changes)</Button>
                             <Button onClick={() => {
                                 this.props.onSave(this.state.currentBrushBoard);
                                 this.setState({ hasUnsavedChanges: false });
                                 this.props.onClose();
-                            }}>Save</Button>
+                            }}><FaSave/> Save Changes</Button>
                         </Modal.Footer>
                     </div>
                 </Modal>

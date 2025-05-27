@@ -116,6 +116,12 @@ export class Game extends React.Component {
             cellHeight:30,
             canvasMouseX:0,
             canvasMouseY:0,
+
+            mouseEntered:false,
+            mouseCellXPos:0,
+            mouseCellYPos:0,
+            mouseCellAlive:false,
+
             offset:{x:0,y:0},
             scale:1,
             blobEnabled:false,
@@ -125,6 +131,7 @@ export class Game extends React.Component {
             adjNumbersEnabled:false,
             jitterScale:2,
             randomSeedEnabled:false,
+            gradientModeEnabled:false,
 
             // color scheme
             colorSchemeEnabled:false,
@@ -736,6 +743,12 @@ export class Game extends React.Component {
                             blobEnabled={this.state.blobEnabled}
                             jitterScale={this.state.jitterScale}
                             randomSeedEnabled={this.state.randomSeedEnabled}
+                            gradientModeEnabled={this.state.gradientModeEnabled}
+                            onMouseEnter={()=>{
+                                this.setState({
+                                    mouseEntered:true,
+                                });
+                            }}
                             onMouseDown={(e)=>{
                                 this.setState({mouseIsDown:true});
                             }}
@@ -824,6 +837,9 @@ export class Game extends React.Component {
                                         hoverCells:newHoverCells,
                                         canvasMouseX:adjustedX,
                                         canvasMouseY:adjustedY,
+                                        mouseCellYPos:i,
+                                        mouseCellXPos:j,
+                                        mouseCellAlive:board?.[i]?.[j]===1
                                     });
                                     this.throttledEmitHover = throttle((newHoverCells,adjustedX,adjustedY)=>{
                                         socket.emit("hoverCellBrush", roomId, newHoverCells, { x: adjustedX, y: adjustedY }, this.state.playerSocketId);
@@ -833,7 +849,7 @@ export class Game extends React.Component {
 
                             }}
                             onMouseLeave={()=>{
-                                this.setState({hoverPosition:null,hoverCells:[]});
+                                this.setState({hoverPosition:null,mouseEntered:false,hoverCells:[]});
 
                                 socket.emit("hoverCellBrush",roomId,[],null,this.state.playerSocketId);
                             }}
@@ -845,6 +861,12 @@ export class Game extends React.Component {
                                     title={"Iterations:"}
                                     number={iterations}
                                     darkMode={darkMode}
+                                ></NumberContainer>
+                                <NumberContainer
+                                    title={"Coords:"}
+                                    darkMode={darkMode}
+                                    number={this.state.mouseEntered ? `(${this.state.mouseCellXPos},${this.state.mouseCellYPos})` : ""}
+                                    subtitle={this.state.mouseEntered ? `${this.state.mouseCellAlive ? "Alive" : "Dead"}` : ""}
                                 ></NumberContainer>
                                 <NumberContainer
                                     title={"Population:"}
@@ -1020,9 +1042,9 @@ export class Game extends React.Component {
                                         colorScheme: this.colorSchemesList[eventKey]
                                     });
                                 }}
-                                style={{alignSelf:"center"}}
+                                style={{alignSelf:"center",marginBottom:"10px"}}
                                 >
-                                    <Dropdown.Toggle variant={"outline-" + (darkMode ? "light" : "dark")}
+                                    <Dropdown.Toggle disabled={!this.state.colorSchemeEnabled} variant={"outline-" + (darkMode ? "light" : "dark")}
                                     style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
                                         <span>{this.state.selectedColorScheme}</span>
@@ -1077,6 +1099,17 @@ export class Game extends React.Component {
                                         }
                                     </Dropdown.Menu>
                                 </Dropdown>
+                                <Form.Check
+                                    style={{
+                                        alignSelf:"center",
+                                        marginBottom:"10px",
+                                    }}
+                                    disabled={!this.state.colorSchemeEnabled}
+                                    checked={this.state.gradientModeEnabled}
+                                    onChange={()=>this.setState({gradientModeEnabled:!this.state.gradientModeEnabled})}
+                                    type="switch"
+                                    label="Enable Color Blending (Beta)"
+                                />
                             </Container>
                             <hr style={{
                                 width:"80%",
