@@ -208,6 +208,8 @@ export default class GameCanvas extends React.Component {
         const {board} = this.state;
         const n = board.length, m = board[0].length;
 
+        if (i < 0 || i >= n || j < 0 || j >= m) return 0;
+
         let count = 0;
         if (i > 0 && j > 0 && board[i-1][j-1] === 1) count++;
         if (i > 0 && board[i-1][j] === 1) count++;
