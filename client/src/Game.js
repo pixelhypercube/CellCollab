@@ -746,8 +746,27 @@ export class Game extends React.Component {
                                     const i = Math.floor(adjustedY/cellHeight);
                                     const j = Math.floor(adjustedX/cellWidth);
 
+                                    const brushBoard = this.state.currentBrushBoard;
+                                    const brushHeight = brushBoard.length;
+                                    const brushWidth = brushBoard[0].length;
+
+                                    // Calculate anchor offsets
+                                    let offsetI = 0, offsetJ = 0;
+                                    switch (this.state.brushAnchorPosition) {
+                                        case 0: offsetI = 0; offsetJ = 0; break; // top-left
+                                        case 1: offsetI = 0; offsetJ = -Math.floor(brushWidth / 2); break; // top
+                                        case 2: offsetI = 0; offsetJ = -brushWidth + 1; break; // top-right
+                                        case 3: offsetI = -Math.floor(brushHeight / 2); offsetJ = 0; break; // left
+                                        case 4: offsetI = -Math.floor(brushHeight / 2); offsetJ = -Math.floor(brushWidth / 2); break; // center
+                                        case 5: offsetI = -Math.floor(brushHeight / 2); offsetJ = -brushWidth + 1; break; // right
+                                        case 6: offsetI = -brushHeight + 1; offsetJ = 0; break; // bottom-left
+                                        case 7: offsetI = -brushHeight + 1; offsetJ = -Math.floor(brushWidth / 2); break; // bottom
+                                        case 8: offsetI = -brushHeight + 1; offsetJ = -brushWidth + 1; break; // bottom-right
+                                        default: offsetI = 0; offsetJ = 0;
+                                    }
+
                                     this.setState({adjustedX,adjustedY,board});
-                                    socket.emit("updateCellBrush",roomId,i,j,this.state.currentBrushBoard);
+                                    socket.emit("updateCellBrush",roomId,i+offsetI,j+offsetJ,this.state.currentBrushBoard);
                                 }
                                 this.setState({mouseIsDown:false,isDragging:false});
                             }}
