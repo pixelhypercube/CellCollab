@@ -126,6 +126,9 @@ export class Game extends React.Component {
             scale:1,
             blobEnabled:false,
 
+            // mouse brush settings
+            brushAnchorPosition:0, // 0 - top-left, 1 - top, 2 - top-right,...
+
             // canvas settings
             gridEnabled:true,
             adjNumbersEnabled:false,
@@ -531,29 +534,6 @@ export class Game extends React.Component {
 
     // non-socket functions
 
-    handleMouseOver = (i,j) => {
-        this.setState({hoverPosition:{y:i,x:j}});
-        let currentBrushBoard = this.state.currentBrushBoard;
-        let brushHeight = currentBrushBoard.length,brushWidth = currentBrushBoard[0].length;
-        if (this.state.hoverPosition) {
-            let hoverCells = Array.from({length: this.state.boardHeight},() =>
-                Array(this.state.boardWidth).fill(0)
-            );
-            for (let di = i,idx = 0;di < i + brushHeight;di++,idx++) {
-                for (let dj = j,jdx = 0;dj < j + brushWidth;dj++,jdx++) {
-                    if (
-                        di >= 0 && di < hoverCells.length &&
-                        dj >= 0 && dj < hoverCells[di].length &&
-                        currentBrushBoard[idx][jdx] === 1
-                    ) {
-                        hoverCells[di][dj] = 1;
-                    }
-                }
-            }
-            this.setState({hoverCells});
-        }
-    }
-
     setCurrentBrush = (currentBrush,currentBrushBoard) => {
         this.setState({currentBrush,currentBrushBoard});
     }
@@ -792,15 +772,29 @@ export class Game extends React.Component {
                                 const brushBoard = this.state.currentBrushBoard;
                                 const brushHeight = brushBoard.length;
                                 const brushWidth = brushBoard[0].length;
+                                
+                                // Calculate anchor offsets
+                                let offsetI = 0, offsetJ = 0;
+                                switch (this.state.brushAnchorPosition) {
+                                    case 0: offsetI = 0; offsetJ = 0; break; // top-left
+                                    case 1: offsetI = 0; offsetJ = -Math.floor(brushWidth / 2); break; // top
+                                    case 2: offsetI = 0; offsetJ = -brushWidth + 1; break; // top-right
+                                    case 3: offsetI = -Math.floor(brushHeight / 2); offsetJ = 0; break; // left
+                                    case 4: offsetI = -Math.floor(brushHeight / 2); offsetJ = -Math.floor(brushWidth / 2); break; // center
+                                    case 5: offsetI = -Math.floor(brushHeight / 2); offsetJ = -brushWidth + 1; break; // right
+                                    case 6: offsetI = -brushHeight + 1; offsetJ = 0; break; // bottom-left
+                                    case 7: offsetI = -brushHeight + 1; offsetJ = -Math.floor(brushWidth / 2); break; // bottom
+                                    case 8: offsetI = -brushHeight + 1; offsetJ = -brushWidth + 1; break; // bottom-right
+                                    default: offsetI = 0; offsetJ = 0;
+                                }
 
                                 // Create a new hover range
                                 const newHoverCells = [];
 
                                 for (let di = 0; di < brushHeight; di++) {
                                     for (let dj = 0; dj < brushWidth; dj++) {
-                                        const boardI = i + di;
-                                        const boardJ = j + dj;
-
+                                        const boardI = i + di + offsetI;
+                                        const boardJ = j + dj + offsetJ;
                                         if (
                                             boardI >= 0 &&
                                             boardI < this.state.board.length &&
@@ -846,7 +840,6 @@ export class Game extends React.Component {
                                     },250);
                                     this.throttledEmitHover(newHoverCells,adjustedX,adjustedY);
                                 }
-
                             }}
                             onMouseLeave={()=>{
                                 this.setState({hoverPosition:null,mouseEntered:false,hoverCells:[]});
@@ -1019,11 +1012,7 @@ export class Game extends React.Component {
                                     </Button>
                                 </div>
                             </Container>
-                            <hr style={{
-                                width:"80%",
-                                display:"flex",
-                                justifySelf:"center"
-                            }}></hr>
+                            <hr></hr>
                             <h3><u>Color Scheme</u></h3>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <Form.Check
@@ -1111,11 +1100,47 @@ export class Game extends React.Component {
                                     label="Enable Color Blending (Beta)"
                                 />
                             </Container>
-                            <hr style={{
-                                width:"80%",
-                                display:"flex",
-                                justifySelf:"center"
-                            }}></hr>
+                            <hr></hr>
+                            <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                                <h3>Mouse Settings</h3>
+                                <p style={{fontSize:"20px"}}>Brush Anchor Position</p>
+                                <Container className={"mouse-align-container"}>
+                                    <Row className={"mouse-align-row"}>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:0})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===0 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===0 ? "✔" : ""}</Button>
+                                        </Col>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:1})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===1 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===1 ? "✔" : ""}</Button>
+                                        </Col>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:2})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===2 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===2 ? "✔" : ""}</Button>
+                                        </Col>
+                                    </Row>
+                                    <Row className={"mouse-align-row"}>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:3})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===3 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===3 ? "✔" : ""}</Button>
+                                        </Col>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:4})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===4 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===4 ? "✔" : ""}</Button>
+                                        </Col>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:5})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===5 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===5 ? "✔" : ""}</Button>
+                                        </Col>
+                                    </Row>
+                                    <Row className={"mouse-align-row"}>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:6})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===6 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===6 ? "✔" : ""}</Button>
+                                        </Col>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:7})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===7 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===7 ? "✔" : ""}</Button>
+                                        </Col>
+                                        <Col className={"mouse-align-col"}>
+                                            <Button onClick={()=>this.setState({brushAnchorPosition:8})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===8 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===8 ? "✔" : ""}</Button>
+                                        </Col>
+                                    </Row>
+                                </Container>
+                            </Container>
+                            <hr></hr>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <h3><u>Canvas Settings</u></h3>
                                 <Form.Check
@@ -1166,11 +1191,7 @@ export class Game extends React.Component {
                             </Container>
                         </Col>
                     </Row>
-                    <hr style={{
-                                width:"80%",
-                                display:"flex",
-                                justifySelf:"center"
-                            }}></hr>
+                    <hr></hr>
                     <HowToPlay darkMode={darkMode}></HowToPlay>
                 </div>
                 )}

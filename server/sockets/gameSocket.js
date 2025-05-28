@@ -261,6 +261,12 @@ module.exports = function(io) {
                 io.to(roomId).emit("update", room.board);
                 room.iterations = 0;
                 io.to(roomId).emit("iterations",room.iterations);
+                // toggle off
+                if (room.isRunning) {
+                    clearInterval(room.intervalId);
+                    room.isRunning = false;
+                    io.to(roomId).emit("status", false);
+                }
             }
         });
 

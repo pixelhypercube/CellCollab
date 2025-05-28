@@ -153,6 +153,31 @@ a {
   color:#495057;
 }
 
+/* mouse settings - alignment btns */
+
+.mouse-align-container {
+  width:150px;
+}
+
+.mouse-align-col {
+  width:50px;
+  padding:0;
+}
+
+.mouse-align-row {
+  width:150px;
+  padding:0;
+}
+
+.mouse-align-btn {
+  width:50px;
+  height:50px;
+}
+
+.mouse-align-btn.pos-selected {
+  background:rgb(41, 125, 41);
+}
+
 /* DARK MODE */
 
 body.dark {

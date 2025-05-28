@@ -549,6 +549,7 @@ export default class GameCanvas extends React.Component {
             style={{
                 border:`2px solid ${darkMode ? `white` : `black`}`,
                 cursor: this.state.dragging ? "grabbing" : "grab",
+                width:"100%",
             }} 
             // onWheel={this.handleWheel}
             onMouseDown={this.props.onMouseDown}
