@@ -1,8 +1,10 @@
 import React from "react";
 import {Modal,Container,Row,Col,Button, Form} from "react-bootstrap";
-import { FaCopy, FaEraser, FaPen, FaSave, FaTimes } from "react-icons/fa";
+import { FaBitbucket, FaCopy, FaEraser, FaPen, FaPowerOff, FaSave, FaTimes } from "react-icons/fa";
 import cursorEraser from "../img/eraser.png";
 import cursorPencil from "../img/pencil.png";
+import cursorFillBucket from "../img/fill_bucket.png";
+import cursorFillBucketEraser from "../img/fill_bucket_eraser.png";
 import Swal from "sweetalert2";
 
 export default class EditBrushModal extends React.Component {
@@ -27,7 +29,8 @@ export default class EditBrushModal extends React.Component {
 
             mouseIsDown: false,
             penState:1, // 0 - erase, 1 - pen
-            penStateUrls:[cursorEraser,cursorPencil],
+            bucketState:0, // 0 - off, 1 - on
+            penStateUrls:[cursorEraser,cursorPencil,cursorFillBucketEraser,cursorFillBucket],
             penStateNames:["Eraser","Draw"],
 
             // modal tingies
@@ -286,7 +289,7 @@ export default class EditBrushModal extends React.Component {
     }
 
     handleMouseMoveOrDown = (e) => {
-        const {cellHeight,cellWidth,currentBrushBoard,mouseIsDown} = this.state;
+        const {cellHeight,cellWidth,currentBrushBoard,mouseIsDown,bucketState,penState} = this.state;
 
         const canvas = e.target;
         const rect = canvas.getBoundingClientRect();
@@ -335,7 +338,8 @@ export default class EditBrushModal extends React.Component {
         // PAINT BOARD
 
         if (mouseIsDown) {
-            this.fillCanvas(j,i);
+            if (bucketState) this.bucketFill(j,i,penState);
+            else this.fillCanvas(j,i);
         }
     }
 
@@ -343,6 +347,12 @@ export default class EditBrushModal extends React.Component {
         const {penState} = this.state;
         if (penState===0) this.setState({penState:1});
         else if (penState===1) this.setState({penState:0});
+    }
+
+    toggleBucketState = () => {
+        const {bucketState} = this.state;
+        if (bucketState===0) this.setState({bucketState:1});
+        else if (bucketState===1) this.setState({bucketState:0});
     }
 
     renderPenState = (penState) => {
@@ -361,6 +371,43 @@ export default class EditBrushModal extends React.Component {
                 </>
             )
         }
+    }
+
+    renderBucketState = (bucketState) => {
+        if (bucketState===0) {
+            return (
+                <>
+                    <FaPowerOff style={{marginRight:"10px"}}></FaPowerOff>
+                    Off
+                </>
+            )
+        } else if (bucketState===1) {
+            return (
+                <>
+                    <FaBitbucket style={{marginRight:"10px"}}></FaBitbucket>
+                    On
+                </>
+            )
+        }
+    }
+
+    // ONLY FOR FILL BUCKET
+
+    bucketFill = (x,y,brushState) => {
+        const {currentBrushBoardWidth,currentBrushBoardHeight,currentBrushBoard} = this.state;
+        currentBrushBoard[y][x] = brushState;
+        let directions = [[0,1],[1,0],[0,-1],[-1,0]];
+
+        for (let direction of directions) {
+            let [dy,dx] = direction;
+            const offsetX = x+dx;
+            const offsetY = y+dy;
+            if (offsetX>=0 && offsetX<=currentBrushBoardWidth-1 && offsetY>=0 && offsetY<=currentBrushBoardHeight-1) {
+                if (currentBrushBoard[offsetY][offsetX] !== brushState)
+                    this.bucketFill(offsetX,offsetY,brushState);
+            }
+        }
+        return;
     }
 
     handleRotateClockwise = () => {
@@ -410,7 +457,7 @@ export default class EditBrushModal extends React.Component {
     }
     
     render() {
-        const {currentBrushBoard,darkMode,show,cellWidth,cellHeight,penState} = this.state;
+        const {currentBrushBoard,darkMode,show,cellWidth,cellHeight,penState,bucketState} = this.state;
         const canvasWidth = currentBrushBoard[0].length * cellWidth;
         const canvasHeight = currentBrushBoard.length * cellHeight;
         return (
@@ -436,7 +483,8 @@ export default class EditBrushModal extends React.Component {
                     <div 
                     className="w-100"
                     style={{
-                        margin:"auto"
+                        margin:"auto",
+                        fontFamily:"Rubik"
                     }}>
                         <Modal.Header data-bs-theme={darkMode ? "dark" : "light"} closeButton className={darkMode ? "bg-dark text-light" : ""}> 
                             <h3>Edit Brush (Beta)</h3>
@@ -456,7 +504,7 @@ export default class EditBrushModal extends React.Component {
                                 width:`${canvasWidth}px`,
                                 height:`${canvasHeight}px`,
                                 border:`2px solid grey`,
-                                cursor: `url(${this.state.penStateUrls[this.state.penState]}) 0 32, auto`
+                                cursor: `url(${this.state.penStateUrls[this.state.penState+(this.state.bucketState*2)]}) 0 32, auto`
                             }}
                             onMouseMove={(e)=>{
                                 this.handleMouseMoveOrDown(e);
@@ -510,6 +558,20 @@ export default class EditBrushModal extends React.Component {
                                         }}
                                         >
                                             {this.renderPenState(penState)}
+                                        </Button>
+                                        <h5>Fill Bucket</h5>
+                                        <Button
+                                        className={darkMode ? "dark" : ""}
+                                        variant={`outline-${darkMode ? "light" : "dark"}`}
+                                        onClick={(e)=>{
+                                            this.toggleBucketState();
+                                        }}
+                                        style={{
+                                            height:"50px",
+                                            fontSize:"20px"
+                                        }}
+                                        >
+                                            {this.renderBucketState(bucketState)}
                                         </Button>
                                     </Col>
                                     <Col xs={3}>

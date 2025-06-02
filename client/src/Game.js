@@ -767,7 +767,7 @@ export class Game extends React.Component {
                                     }
 
                                     this.setState({adjustedX,adjustedY,board});
-                                    socket.emit("updateCellBrush",roomId,i+offsetI,j+offsetJ,this.state.currentBrushBoard);
+                                    socket.emit("updateCellBrush",roomId,i+offsetI-1,j+offsetJ-1,this.state.currentBrushBoard);
                                 }
                                 this.setState({mouseIsDown:false,isDragging:false});
                             }}
@@ -813,8 +813,8 @@ export class Game extends React.Component {
 
                                 for (let di = 0; di < brushHeight; di++) {
                                     for (let dj = 0; dj < brushWidth; dj++) {
-                                        const boardI = i + di + offsetI;
-                                        const boardJ = j + dj + offsetJ;
+                                        const boardI = i + di + offsetI - 1;
+                                        const boardJ = j + dj + offsetJ - 1;
                                         if (
                                             boardI >= 0 &&
                                             boardI < this.state.board.length &&
@@ -1123,7 +1123,7 @@ export class Game extends React.Component {
                             <hr></hr>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <h3>Mouse Settings</h3>
-                                <p style={{fontSize:"20px"}}>Brush Anchor Position</p>
+                                <p style={{fontSize:"20px"}}>Brush Anchor Position: <strong>{["Top Left","Top","Top Right","Left","Right","Bottom Left","Bottom","Bottom Right"][this.state.brushAnchorPosition]}</strong></p>
                                 <Container className={"mouse-align-container"}>
                                     <Row className={"mouse-align-row"}>
                                         <Col className={"mouse-align-col"}>
