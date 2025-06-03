@@ -159,30 +159,44 @@ export default class GameCanvas extends React.Component {
     }
     
     handleMouseMove = (e) => {
-        const rect = this.canvasRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        const {canvasWidth,canvasHeight,cellWidth,cellHeight,board} = this.state;
+        if (board && board.length>0) {
+            const n = board.length, m = board[0].length;
 
-        if (this.state.dragging) {
-            const dx = mouseX - this.state.lastMousePosition.x;
-            const dy = mouseY - this.state.lastMousePosition.y;
-            
-            this.setState((prevState) => {
-                const newOffset = {
-                    x: prevState.offset.x + dx,
-                    y: prevState.offset.y + dy
-                };
-    
-                // notify parent about the offset change
-                if (this.props.onTransformChange) {
-                    this.props.onTransformChange({ offset: newOffset, scale: prevState.scale });
-                }
-    
-                return {
-                    offset: newOffset,
-                    lastMousePosition: { x: mouseX, y: mouseY }
-                };
-            }, this.canvasRender);
+            const rect = this.canvasRef.current.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (this.state.dragging) {
+                const dx = mouseX - this.state.lastMousePosition.x;
+                const dy = mouseY - this.state.lastMousePosition.y;
+                
+                this.setState((prevState) => {
+                    let offsetX = prevState.offset.x + dx;
+                    let offsetY = prevState.offset.y + dy;
+                    
+                    const boardWidth = m * cellWidth;
+                    const boardHeight = n * cellHeight;
+
+                    offsetX = Math.min(0, Math.max(offsetX, canvasWidth - boardWidth));
+                    offsetY = Math.min(0, Math.max(offsetY, canvasHeight - boardHeight));
+
+                    const newOffset = {
+                        x: offsetX,
+                        y: offsetY
+                    };
+        
+                    // notify parent about the offset change
+                    if (this.props.onTransformChange) {
+                        this.props.onTransformChange({ offset: newOffset, scale: prevState.scale });
+                    }
+        
+                    return {
+                        offset: newOffset,
+                        lastMousePosition: { x: mouseX, y: mouseY }
+                    };
+                }, this.canvasRender);
+            }
         }
     }
     
@@ -192,15 +206,46 @@ export default class GameCanvas extends React.Component {
 
     handleWheel = (e) => {
         e.preventDefault();
-        const scaleChange = e.deltaY > 0 ? 0.9 : 1.1; // Zoom out or in
+
+        const rect = this.canvasRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
         this.setState((prevState) => {
-            const newScale = Math.min(Math.max(prevState.scale * scaleChange, 0.1), 3); // Clamp scale between 0.1 and 3
-            
+            const { canvasWidth, canvasHeight, cellWidth, cellHeight, board, offset } = prevState;
+            if (!board || board.length === 0) return null;
+
+            const n = board.length, m = board[0].length;
+
+            const oldScale = prevState.scale;
+            const scaleChange = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.min(Math.max(oldScale * scaleChange, 0.1), 3);
+
+            const worldX = (mouseX - offset.x) / oldScale;
+            const worldY = (mouseY - offset.y) / oldScale;
+
+            const newOffsetX = mouseX - worldX * newScale;
+            const newOffsetY = mouseY - worldY * newScale;
+
+            const boardWidth = m * cellWidth * newScale;
+            const boardHeight = n * cellHeight * newScale;
+
+            const clampedOffsetX = Math.min(0, Math.max(newOffsetX, canvasWidth - boardWidth));
+            const clampedOffsetY = Math.min(0, Math.max(newOffsetY, canvasHeight - boardHeight));
+
+            const newOffset = {
+                x: clampedOffsetX,
+                y: clampedOffsetY
+            };
+
             if (this.props.onTransformChange) {
-                this.props.onTransformChange({ offset: prevState.offset, scale: newScale });
+                this.props.onTransformChange({ offset: newOffset, scale: newScale });
             }
 
-            return { scale: newScale };
+            return {
+                scale: newScale,
+                offset: newOffset
+            };
         }, this.canvasRender);
     };
 
