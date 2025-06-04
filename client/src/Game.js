@@ -910,13 +910,7 @@ export class Game extends React.Component {
                         <Col xl={4} lg={12} md={12} sm={12} xs={12} className="brush-preview-container">
                             <Container>
                             <Container className="d-flex flex-column justify-content-center align-items-center">
-                                <h3><u>Brush Preview</u></h3>
-                                <Button 
-                                className={darkMode ? "dark" : ""}
-                                onClick={()=>this.setState({editModalOpened:true})}
-                                variant={`outline-${darkMode ? "light" : "dark"}`}
-                                >Edit Brush</Button>
-                                <br></br>
+                                <h3 className="mb-3"><u>Brush Preview</u></h3>
                                 <div style={{
                                     borderRadius:"10px",
                                     border:"2px solid white",
@@ -931,6 +925,11 @@ export class Game extends React.Component {
                                     ></BrushPreview>
                                 </div>
                                 <br></br>
+                                <Button 
+                                className={darkMode ? "dark" : ""}
+                                onClick={()=>this.setState({editModalOpened:true})}
+                                variant={`outline-${darkMode ? "light" : "dark"}`}
+                                >Edit Brush</Button>
                                 <EditBrushModal 
                                 cellWidth={modalCellWidth}
                                 cellHeight={modalCellHeight}
@@ -944,7 +943,7 @@ export class Game extends React.Component {
                                     this.setState({currentBrushBoard});
                                 }}
                                 ></EditBrushModal>
-                                <h5>Rotation</h5>
+                                {/* <h5>Rotation</h5>
                                 <Row className="mb-1">
                                     <Col style={{paddingRight:"5px"}}>
                                         <Button className={darkMode ? "dark" : ""} onClick={()=>{
@@ -960,7 +959,7 @@ export class Game extends React.Component {
                                         }} variant={`outline-${darkMode ? "light" : "dark"}`}
                                         style={{fontSize:"25px"}}>↺</Button>
                                     </Col>
-                                </Row>
+                                </Row> */}
                                 <hr style={{width:"50%"}}></hr>
                                 {/* <h6>Step</h6> */}
                                 {/* WIP - Coming soon!!! */}

@@ -242,13 +242,34 @@ export default class EditBrushModal extends React.Component {
     rotateMatrixCounterClockwise = (matrix) => {
         const rows = matrix.length;
         const cols = matrix[0].length;
-        const res = [];
+        let res = [];
 
         for (let i = cols - 1; i >= 0; i--) {
             res[cols - 1 - i] = [];
             for (let j = 0; j < rows; j++) {
                 res[cols - 1 - i].push(matrix[j][i]);
             }
+        }
+
+        return res;
+    }
+
+    flipMatrixVertically = (matrix) => {
+        const rows = matrix.length;
+        let res = [];
+
+        for (let i = rows - 1; i >= 0; i--) {
+            res.push([...matrix[i]]);
+        }
+
+        return res;
+    }
+
+    flipMatrixHorizontally = (matrix) => {
+        let res = [];
+
+        for (let row of matrix) {
+            res.push([...row].reverse());
         }
 
         return res;
@@ -434,6 +455,36 @@ export default class EditBrushModal extends React.Component {
         });
     }
 
+    handleFlipHorizontally = () => {
+        const { currentBrushBoard } = this.state;
+        if (!currentBrushBoard || currentBrushBoard.length === 0 || currentBrushBoard[0].length === 0) return;
+
+        const flippedMatrix = this.flipMatrixHorizontally(currentBrushBoard);
+        this.setState({ 
+            currentBrushBoard: flippedMatrix,
+            currentCanvasBoardHeight: flippedMatrix.length, 
+            currentCanvasBoardWidth: flippedMatrix[0].length,
+        }, () => {
+            this.resizeGrid(flippedMatrix[0].length, flippedMatrix.length);
+            this.handleUpdateCanvasSize();
+        });
+    }
+
+    handleFlipVertically = () => {
+        const { currentBrushBoard } = this.state;
+        if (!currentBrushBoard || currentBrushBoard.length === 0 || currentBrushBoard[0].length === 0) return;
+
+        const flippedMatrix = this.flipMatrixVertically(currentBrushBoard);
+        this.setState({ 
+            currentBrushBoard: flippedMatrix,
+            currentCanvasBoardHeight: flippedMatrix.length, 
+            currentCanvasBoardWidth: flippedMatrix[0].length,
+        }, () => {
+            this.resizeGrid(flippedMatrix[0].length, flippedMatrix.length);
+            this.handleUpdateCanvasSize();
+        });
+    }
+
     handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(`[${this.state.currentBrushBoard.map(row => `[${row.join(",")}]`).join(",\n")}]`);
@@ -544,7 +595,7 @@ export default class EditBrushModal extends React.Component {
                             <hr></hr>
                             <Container>
                                 <Row>
-                                    <Col xs={3}>
+                                    <Col xs={4}>
                                         <h5>Brush Mode</h5>
                                         <Button
                                         className={darkMode ? "dark" : ""}
@@ -559,6 +610,8 @@ export default class EditBrushModal extends React.Component {
                                         >
                                             {this.renderPenState(penState)}
                                         </Button>
+                                    </Col>
+                                    <Col xs={4}>
                                         <h5>Fill Bucket</h5>
                                         <Button
                                         className={darkMode ? "dark" : ""}
@@ -574,7 +627,7 @@ export default class EditBrushModal extends React.Component {
                                             {this.renderBucketState(bucketState)}
                                         </Button>
                                     </Col>
-                                    <Col xs={3}>
+                                    <Col xs={4}>
                                         <h5>Rotation</h5>
                                         <Row className="mb-1">
                                             <Col style={{paddingRight:"5px"}}>
@@ -597,7 +650,33 @@ export default class EditBrushModal extends React.Component {
                                             </Col>
                                         </Row>
                                     </Col>
-                                    <Col xs={3}>
+                                </Row>
+                                <br></br>
+                                <Row>
+                                    <Col xs={4}>
+                                        <h5>Flip</h5>
+                                        <Row className="mb-1">
+                                            <Col style={{paddingRight:"5px"}}>
+                                                <Button className={darkMode ? "dark" : ""} onClick={this.handleFlipHorizontally} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                                style={{
+                                                    fontSize:"25px",
+                                                    width:"45px",
+                                                    height:"45px",
+                                                    padding:0
+                                                }}>↔</Button>
+                                            </Col>
+                                            <Col style={{paddingLeft:"5px"}}>
+                                                <Button className={darkMode ? "dark" : ""} onClick={this.handleFlipVertically} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                                style={{
+                                                    fontSize:"25px",
+                                                    width:"45px",
+                                                    height:"45px",
+                                                    padding:0
+                                                }}>↕</Button>
+                                            </Col>
+                                        </Row>
+                                    </Col>
+                                    <Col xs={4}>
                                         <h5>Width</h5>
                                         <Form.Control
                                         type="number"
@@ -654,7 +733,7 @@ export default class EditBrushModal extends React.Component {
                                             </Col>
                                         </Row>
                                     </Col>
-                                    <Col xs={3}>
+                                    <Col xs={4}>
                                         <h5>Height</h5>
                                         <Form.Control
                                         type="number"
