@@ -5,7 +5,7 @@ import {Button,Container,Form,Row,Col,Alert, Dropdown} from "react-bootstrap";
 import Brush from "./components/Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon } from 'react-icons/fa';
+import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon, FaStar } from 'react-icons/fa';
 import GameCanvas from "./components/GameCanvas";
 import BrushPreview from "./components/BrushPreview";
 import throttle from "lodash.throttle";
@@ -13,6 +13,7 @@ import NumberContainer from "./components/NumberContainer";
 import HowToPlay from "./components/HowToPlay";
 import brushes from "./brushList.js";
 import EditBrushModal from "./components/EditBrushModal.js";
+import FullLexiconModal from "./components/FullLexiconModal.js";
 
 const MySwal = withReactContent(Swal);
 
@@ -143,10 +144,13 @@ export class Game extends React.Component {
             colorScheme:this.colorSchemesList["default"], // default selected first
 
 
-            // edit modal
+            // edit 
             editModalOpened:false,
             modalCellWidth:20,
             modalCellHeight:20,
+
+            // full lexicon
+            fullLexiconModalOpened:false,
 
             // transform keys
             // scale:1,
@@ -972,6 +976,30 @@ export class Game extends React.Component {
                                     </Col>
                                 </Row> */}
                             </Container>
+                                <div style={{justifyContent:"space-evenly"}} className="d-flex">
+                                    <Button
+                                        className={darkMode ? "dark" : ""}
+                                        onClick={()=>this.setState({fullLexiconModalOpened:true})}
+                                        variant={`outline-${darkMode ? "light" : "dark"}`}
+                                        style={{fontSize:"20px"}}
+                                    >
+                                        <FaStar/> Full Lexicon List
+                                    </Button>
+                                    <FullLexiconModal
+                                    darkMode={darkMode}
+                                    colorLight={"#DDDDDD"}
+                                    colorDark={"#222222"}
+                                    borderColorDark={"#AAAAAA"}
+                                    borderColorLight={"#555555"}
+                                    show={this.state.fullLexiconModalOpened}
+                                    currentBrush={this.state.currentBrush}
+                                    onBrushChange={(newBrush,newBrushBoard)=>this.setState({
+                                        currentBrush:newBrush,
+                                        currentBrushBoard:newBrushBoard
+                                    })}
+                                    onClose={()=>this.setState({fullLexiconModalOpened:false})}></FullLexiconModal>
+                                </div>
+                                <br></br>
                                 <h3><u>Palette</u></h3>
                                 {
                                     Object.entries(brushes).map(([categoryName,brushList],idx)=>{
