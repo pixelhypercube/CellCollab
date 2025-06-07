@@ -1,5 +1,6 @@
 import React from "react";
 import cursorImgUrl from "../img/cursor.png";
+import brushImgUrl from "../img/brush.png";
 
 export default class GameCanvas extends React.Component {
     constructor(props) {
@@ -569,7 +570,7 @@ export default class GameCanvas extends React.Component {
             ctx.fillStyle = fill;
             ctx.strokeStyle = stroke;
             ctx.fillRect(xPos, yPos, cellWidth, cellHeight);
-            if (this.state.gradientModeEnabled && isAlive) this.printGradientCell(xPos, yPos, i, j, fill+"00", ctx);
+            if (this.props.colorSchemeEnabled && this.state.gradientModeEnabled && isAlive) this.printGradientCell(xPos, yPos, i, j, fill+"00", ctx);
         }
 
         if (isSelfHovering) {
@@ -590,12 +591,12 @@ export default class GameCanvas extends React.Component {
     }
 
     render() {
-        const {canvasWidth,canvasHeight,darkMode} = this.state;
+        const {canvasWidth,canvasHeight,darkMode,dragging} = this.state;
         return <div>
             <canvas onMouseMove={this.props.onMouseMove} 
             style={{
                 border:`2px solid ${darkMode ? `white` : `black`}`,
-                cursor: this.state.dragging ? "grabbing" : "grab",
+                cursor: dragging ? "grabbing" : `url(${brushImgUrl}) 0 32, auto`,
                 width:"100%",
             }} 
             // onWheel={this.handleWheel}

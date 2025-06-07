@@ -5,7 +5,7 @@ import {Button,Container,Form,Row,Col,Alert, Dropdown} from "react-bootstrap";
 import Brush from "./components/Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon, FaStar } from 'react-icons/fa';
+import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon, FaList } from 'react-icons/fa';
 import GameCanvas from "./components/GameCanvas";
 import BrushPreview from "./components/BrushPreview";
 import throttle from "lodash.throttle";
@@ -129,7 +129,7 @@ export class Game extends React.Component {
             blobEnabled:false,
 
             // mouse brush settings
-            brushAnchorPosition:0, // 0 - top-left, 1 - top, 2 - top-right,...
+            brushAnchorPosition:4, // 0 - top-left, 1 - top, 2 - top-right,...
 
             // canvas settings
             gridEnabled:true,
@@ -627,6 +627,7 @@ export class Game extends React.Component {
                                 value={roomId}
                                 onChange={this.handleRoomChange}
                                 placeholder="Room ID"
+                                className={darkMode ? 'bg-dark text-white' : 'bg-light text-dark'}
                                 />
                             </Form.Group>
                             <br></br>
@@ -637,6 +638,7 @@ export class Game extends React.Component {
                                 value={username}
                                 onChange={this.handleUsernameChange}
                                 placeholder="Username"
+                                className={darkMode ? 'bg-dark text-white' : 'bg-light text-dark'}
                                 />
                             </Form.Group>
                             <br></br>
@@ -666,6 +668,7 @@ export class Game extends React.Component {
                                                 type="number"
                                                 value={boardWidth}
                                                 onChange={this.handleWidthChange}
+                                                className={darkMode ? 'bg-dark text-white' : 'bg-light text-dark'}
                                                 // min="10"
                                                 // max="50"
                                                 />
@@ -678,6 +681,7 @@ export class Game extends React.Component {
                                                 type="number"
                                                 value={boardHeight}
                                                 onChange={this.handleHeightChange}
+                                                className={darkMode ? 'bg-dark text-white' : 'bg-light text-dark'}
                                                 // min="10"
                                                 // max="50"
                                                 />
@@ -983,7 +987,7 @@ export class Game extends React.Component {
                                         variant={`outline-${darkMode ? "light" : "dark"}`}
                                         style={{fontSize:"20px"}}
                                     >
-                                        <FaStar/> Full Lexicon List
+                                        <FaList/> Full Lexicon List
                                     </Button>
                                     <FullLexiconModal
                                     darkMode={darkMode}
