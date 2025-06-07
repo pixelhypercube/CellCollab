@@ -1191,7 +1191,7 @@ export class Game extends React.Component {
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <h3><u>Canvas Settings</u></h3>
                                 <Row>
-                                    <Col>
+                                    <Col xs={12} md={6}>
                                         <Form.Check
                                             style={{
                                                 alignSelf:"center",
@@ -1204,7 +1204,7 @@ export class Game extends React.Component {
                                             label="Display Grid"
                                         />
                                     </Col>
-                                    <Col>
+                                    <Col xs={12} md={6}>
                                         <Form.Check
                                             style={{
                                                 alignSelf:"center",
@@ -1219,7 +1219,7 @@ export class Game extends React.Component {
                                     </Col>
                                 </Row>
                                 <Row>
-                                    <Col>
+                                    <Col xs={12} md={6}>
                                         <Form.Check
                                             style={{
                                                 alignSelf:"center",
@@ -1232,7 +1232,7 @@ export class Game extends React.Component {
                                             label="Enable Blob Rendering (Beta)"
                                         />
                                     </Col>
-                                    <Col>
+                                    <Col xs={12} md={6}>
                                         <Form.Check
                                             style={{
                                                 alignSelf:"center",
@@ -1254,7 +1254,6 @@ export class Game extends React.Component {
                             </Container>
                         </Col>
                     </Row>
-                    <hr></hr>
                     <HowToPlay darkMode={darkMode}></HowToPlay>
                 </div>
                 )}
