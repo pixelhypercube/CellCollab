@@ -65,7 +65,7 @@ export default class FullLexiconModal extends React.Component {
 
     render() {
         const {darkMode,colorDark,colorLight,borderColorDark,borderColorLight} = this.props;
-        const {brushPage,brushData,show,maxBrushPage} = this.state;
+        const {brushData,show} = this.state;
         return (
             <>
                 <style>
