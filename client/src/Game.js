@@ -1190,47 +1190,63 @@ export class Game extends React.Component {
                             <hr></hr>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <h3><u>Canvas Settings</u></h3>
-                                <Form.Check
-                                    style={{
-                                        alignSelf:"center",
-                                        marginBottom:"10px",
-                                    }}
-                                    checked={this.state.gridEnabled}
-                                    onChange={()=>this.setState({gridEnabled:!this.state.gridEnabled})}
-                                    type="switch"
-                                    label="Display Grid"
-                                />
-                                <Form.Check
-                                    style={{
-                                        alignSelf:"center",
-                                        marginBottom:"10px",
-                                    }}
-                                    checked={this.state.adjNumbersEnabled}
-                                    onChange={()=>this.setState({adjNumbersEnabled:!this.state.adjNumbersEnabled})}
-                                    type="switch"
-                                    label="Display Adjacent Numbers"
-                                />
-                                <Form.Check
-                                        style={{
-                                            alignSelf:"center",
-                                            marginBottom:"10px",
-                                        }}
-                                        checked={this.state.blobEnabled}
-                                        onChange={()=>this.setState({blobEnabled:!this.state.blobEnabled})}
-                                        type="switch"
-                                        label="Enable Blob Rendering (Beta)"
-                                    />
-                                <Form.Check
-                                        style={{
-                                            alignSelf:"center",
-                                            marginBottom:"10px",
-                                        }}
-                                        checked={this.state.randomSeedEnabled}
-                                        onChange={()=>this.setState({randomSeedEnabled:!this.state.randomSeedEnabled})}
-                                        type="switch"
-                                        label="Random Seed (Blob)"
-                                        disabled={!this.state.blobEnabled}
-                                    />
+                                <Row>
+                                    <Col>
+                                        <Form.Check
+                                            style={{
+                                                alignSelf:"center",
+                                                marginBottom:"10px",
+                                                textAlign:"left"
+                                            }}
+                                            checked={this.state.gridEnabled}
+                                            onChange={()=>this.setState({gridEnabled:!this.state.gridEnabled})}
+                                            type="switch"
+                                            label="Display Grid"
+                                        />
+                                    </Col>
+                                    <Col>
+                                        <Form.Check
+                                            style={{
+                                                alignSelf:"center",
+                                                marginBottom:"10px",
+                                                textAlign:"left"
+                                            }}
+                                            checked={this.state.adjNumbersEnabled}
+                                            onChange={()=>this.setState({adjNumbersEnabled:!this.state.adjNumbersEnabled})}
+                                            type="switch"
+                                            label="Display Adjacent Numbers"
+                                        />
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col>
+                                        <Form.Check
+                                            style={{
+                                                alignSelf:"center",
+                                                marginBottom:"10px",
+                                                textAlign:"left"
+                                            }}
+                                            checked={this.state.blobEnabled}
+                                            onChange={()=>this.setState({blobEnabled:!this.state.blobEnabled})}
+                                            type="switch"
+                                            label="Enable Blob Rendering (Beta)"
+                                        />
+                                    </Col>
+                                    <Col>
+                                        <Form.Check
+                                            style={{
+                                                alignSelf:"center",
+                                                marginBottom:"10px",
+                                                textAlign:"left"
+                                            }}
+                                            checked={this.state.randomSeedEnabled}
+                                            onChange={()=>this.setState({randomSeedEnabled:!this.state.randomSeedEnabled})}
+                                            type="switch"
+                                            label="Random Seed (Blob)"
+                                            disabled={!this.state.blobEnabled}
+                                        />
+                                    </Col>
+                                </Row>
                                     <Form.Range min={0} max={10} value={this.state.jitterScale} onChange={(e)=>{
                                     this.setState({jitterScale:e.target.value});
                                 }} step={0.01} style={{width:"80%",alignSelf:"center"}} disabled={!this.state.blobEnabled} />
