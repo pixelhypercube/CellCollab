@@ -17,7 +17,7 @@ export default class HowToPlay extends React.Component {
         return (
             <Container className="mt-4">
                 <hr></hr>
-                <h2 className="mb-3 text-center">❓ How to Play: CellCollab</h2>
+                <h2 className="mb-3 text-center"><u>❓ How to Play: CellCollab</u></h2>
     
                 <Accordion style={{textAlign:"left"}} defaultActiveKey="0" className={this.props.darkMode ? "accordion-dark" : ""}>
                     <Accordion.Item eventKey="0">

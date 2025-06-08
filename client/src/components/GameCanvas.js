@@ -32,16 +32,17 @@ export default class GameCanvas extends React.Component {
     }
 
     componentDidMount() {
-        this.canvasRender();
-        this.canvasRef.current.addEventListener("wheel", this.handleWheel);
-        this.canvasRef.current.addEventListener("mousedown", this.handleMouseDown);
-        this.canvasRef.current.addEventListener("mousemove", this.handleMouseMove);
-        this.canvasRef.current.addEventListener("mouseup", this.handleMouseUp);
-
-        // TOUCH EVENTS
-        this.canvasRef.current.addEventListener("touchstart",this.handleTouchStart);
-        this.canvasRef.current.addEventListener("touchmove",this.handleTouchMove);
-        this.canvasRef.current.addEventListener("touchend",this.handleTouchEnd);
+        if (this.canvasRef.current) {
+            const canvas = this.canvasRef.current;
+            canvas.addEventListener('mousedown', this.handleMouseDown);
+            canvas.addEventListener('mousemove', this.handleMouseMove);
+            canvas.addEventListener('mouseup', this.handleMouseUp);
+            canvas.addEventListener('wheel', this.handleWheel, { passive: false });
+            // TOUCH EVENTS
+            canvas.addEventListener("touchstart",this.handleTouchStart);
+            canvas.addEventListener("touchmove",this.handleTouchMove);
+            canvas.addEventListener("touchend",this.handleTouchEnd);
+        }
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -102,45 +103,40 @@ export default class GameCanvas extends React.Component {
     handleTouchMove = (e) => {
         e.preventDefault();
 
-        const canvas = this.canvasRef.current;
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
         if (e.touches.length === 1 && this.state.dragging) {
             const touch = e.touches[0];
-            const currentX = (touch.clientX - rect.left + this.state.cellWidth) * scaleX;
-            const currentY = (touch.clientY - rect.top + this.state.cellWidth) * scaleY;
-
-            const lastX = this.state.lastMousePosition.x;
-            const lastY = this.state.lastMousePosition.y;
-
-            const dx = currentX - lastX;
-            const dy = currentY - lastY;
+            const dx = touch.clientX - this.state.lastMousePosition.x;
+            const dy = touch.clientY - this.state.lastMousePosition.y;
 
             this.setState((prevState) => {
-                const newOffset = {
-                    x: prevState.offset.x + dx,
-                    y: prevState.offset.y + dy
-                };
+                let offsetX = prevState.offset.x + dx;
+                let offsetY = prevState.offset.y + dy;
+
+                const { canvasWidth, canvasHeight, board, cellWidth, cellHeight } = prevState;
+                if (!board || board.length === 0) return null;
+
+                const n = board.length, m = board[0].length;
+                const boardWidth = m * cellWidth * prevState.scale;
+                const boardHeight = n * cellHeight * prevState.scale;
+
+                offsetX = Math.min(0, Math.max(offsetX, canvasWidth - boardWidth));
+                offsetY = Math.min(0, Math.max(offsetY, canvasHeight - boardHeight));
+
+                const newOffset = { x: offsetX, y: offsetY };
 
                 if (this.props.onTransformChange) {
-                    this.props.onTransformChange({
-                        offset: newOffset,
-                        scale: prevState.scale
-                    });
+                    this.props.onTransformChange({ offset: newOffset, scale: prevState.scale });
                 }
 
                 return {
                     offset: newOffset,
                     lastMousePosition: {
-                        x: currentX,
-                        y: currentY
+                        x: touch.clientX,
+                        y: touch.clientY
                     }
                 };
             }, this.canvasRender);
-
-        } else if (e.touches.length === 2) {
+        } else if (e.touches.length === 2 && this.state.initialPinchDistance) {
             const [touch1, touch2] = e.touches;
             const dist = Math.sqrt(
                 Math.pow(touch2.clientX - touch1.clientX, 2) +
@@ -150,15 +146,39 @@ export default class GameCanvas extends React.Component {
             const scaleChange = dist / this.state.initialPinchDistance;
             const newScale = Math.min(Math.max(this.state.initialScale * scaleChange, 0.1), 3);
 
+            // Midpoint of the pinch
+            const midX = (touch1.clientX + touch2.clientX) / 2;
+            const midY = (touch1.clientY + touch2.clientY) / 2;
+
             this.setState((prevState) => {
+                const { offset, scale, canvasWidth, canvasHeight, board, cellWidth, cellHeight } = prevState;
+                if (!board || board.length === 0) return null;
+
+                const n = board.length, m = board[0].length;
+
+                // Convert screen midpoint to world coordinates
+                const worldX = (midX - offset.x) / scale;
+                const worldY = (midY - offset.y) / scale;
+
+                const newOffsetX = midX - worldX * newScale;
+                const newOffsetY = midY - worldY * newScale;
+
+                const boardWidth = m * cellWidth * newScale;
+                const boardHeight = n * cellHeight * newScale;
+
+                const clampedOffsetX = Math.min(0, Math.max(newOffsetX, canvasWidth - boardWidth));
+                const clampedOffsetY = Math.min(0, Math.max(newOffsetY, canvasHeight - boardHeight));
+
+                const newOffset = { x: clampedOffsetX, y: clampedOffsetY };
+
                 if (this.props.onTransformChange) {
-                    this.props.onTransformChange({
-                        offset: prevState.offset,
-                        scale: newScale
-                    });
+                    this.props.onTransformChange({ offset: newOffset, scale: newScale });
                 }
 
-                return { scale: newScale };
+                return {
+                    scale: newScale,
+                    offset: newOffset
+                };
             }, this.canvasRender);
         }
     }

@@ -5,7 +5,7 @@ import {Button,Container,Form,Row,Col,Alert, Dropdown} from "react-bootstrap";
 import Brush from "./components/Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon, FaList } from 'react-icons/fa';
+import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon, FaList, FaEdit } from 'react-icons/fa';
 import GameCanvas from "./components/GameCanvas";
 import BrushPreview from "./components/BrushPreview";
 import throttle from "lodash.throttle";
@@ -75,6 +75,36 @@ export class Game extends React.Component {
             "monoContrast": [
                 "#111111", "#222222", "#333333", "#444444", 
                 "#555555", "#666666", "#777777", "#888888", "#999999"
+            ],
+            "vibrantMeadow": [
+                "#7CB342", "#C5E1A5", "#FFCC80", "#FFAB91", "#FFD180", "#A7FFEB", "#84FFFF", "#64FFDA", "#1DE9B6"
+            ],
+            "deepOcean": [
+                "#002171", "#0047BB", "#0069C0", "#0088CC", "#00AADD", "#00C2E8", "#00D4F7", "#00E0FF", "#00ECFF"
+            ],
+            "warmEarth": [
+                "#5D4037", "#795548", "#A1887F", "#D7CCC8", "#EFEBE9", "#BCAAA4", "#8D6E63", "#6D4C41", "#4E342E"
+            ],
+            "cosmicDawn": [
+                "#311B92", "#512DA8", "#7E57C2", "#9575CD", "#B39DDB", "#FF80AB", "#FF4081", "#F50057", "#C51162"
+            ],
+            "springBlossom": [
+                "#F8BBD0", "#F48FB1", "#F06292", "#EC407A", "#E91E63", "#D81B60", "#C2185B", "#AD1457", "#880E4F"
+            ],
+            "industrial": [
+                "#455A64", "#607D8B", "#78909C", "#90A4AE", "#B0BEC5", "#CFD8DC", "#ECEFF1", "#AFB42B", "#9E9E9E"
+            ],
+            "tropicalPunch": [
+                "#FF9800", "#FFB74D", "#FFE082", "#FFF176", "#FFEA00", "#EEFF41", "#C6FF00", "#AEEA00", "#64DD17"
+            ],
+            "vintage": [
+                "#B0BEC5", "#CFD8DC", "#E0F2F7", "#B2EBF2", "#80DEEA", "#4DD0E1", "#26C6DA", "#00BCD4", "#00ACC1"
+            ],
+            "mysticGlow": [
+                "#4A148C", "#6A1B9A", "#8E24AA", "#AB47BC", "#CE93D8", "#E1BEE7", "#9FA8DA", "#7986CB", "#5C6BC0"
+            ],
+            "desertSunset": [
+                "#BF360C", "#FF3D00", "#FF6E40", "#FF9E80", "#FFCCBC", "#FFCDD2", "#EF9A9A", "#E57373", "#EF5350"
             ]
         };
         
@@ -737,15 +767,18 @@ export class Game extends React.Component {
                             jitterScale={this.state.jitterScale}
                             randomSeedEnabled={this.state.randomSeedEnabled}
                             gradientModeEnabled={this.state.gradientModeEnabled}
-                            onMouseEnter={()=>{
+                            onMouseEnter={(e)=>{
+                                e.preventDefault();
                                 this.setState({
                                     mouseEntered:true,
                                 });
                             }}
                             onMouseDown={(e)=>{
+                                e.preventDefault();
                                 this.setState({mouseIsDown:true});
                             }}
                             onMouseUp={(e)=>{
+                                e.preventDefault();
                                 if (!this.state.isDragging) {
                                     const canvas = e.target;
                                     const rect = canvas.getBoundingClientRect();
@@ -788,6 +821,7 @@ export class Game extends React.Component {
                                 this.setState({mouseIsDown:false,isDragging:false});
                             }}
                             onMouseMove={(e)=>{
+                                e.preventDefault();
                                 if (this.state.mouseIsDown) this.setState({isDragging:true});
                                 
                                 const canvas = e.target;
@@ -949,7 +983,8 @@ export class Game extends React.Component {
                                 className={darkMode ? "dark" : ""}
                                 onClick={()=>this.setState({editModalOpened:true})}
                                 variant={`outline-${darkMode ? "light" : "dark"}`}
-                                >Edit Brush</Button>
+                                style={{fontSize:"20px"}}
+                                ><FaEdit/> Edit Brush</Button>
                                 <EditBrushModal 
                                 cellWidth={modalCellWidth}
                                 cellHeight={modalCellHeight}
@@ -1050,6 +1085,7 @@ export class Game extends React.Component {
                                 }
                             </Container>
                             {/* PAGINATION */}
+                            <br></br>
                             <Container>
                                 <div style={{justifyContent:"space-evenly"}} className="d-flex">
                                     {/* Previous Button */}
@@ -1075,9 +1111,9 @@ export class Game extends React.Component {
                                     </Button>
                                 </div>
                             </Container>
-                            <hr></hr>
-                            <h3><u>Color Scheme</u></h3>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                                <hr></hr>
+                                <h3><u>Color Scheme</u></h3>
                                 <Form.Check
                                     style={{
                                         alignSelf:"center",
@@ -1163,9 +1199,9 @@ export class Game extends React.Component {
                                     label="Enable Color Blending (Beta)"
                                 />
                             </Container>
-                            <hr></hr>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                                <h3>Mouse Settings</h3>
+                                <hr></hr>
+                                <h3><u>Mouse Settings</u></h3>
                                 <p style={{fontSize:"20px"}}>Brush Anchor Position: <strong>{["Top Left","Top","Top Right","Left","Center","Right","Bottom Left","Bottom","Bottom Right"][this.state.brushAnchorPosition]}</strong></p>
                                 <Container className={"mouse-align-container"}>
                                     <Row className={"mouse-align-row"}>
@@ -1203,8 +1239,8 @@ export class Game extends React.Component {
                                     </Row>
                                 </Container>
                             </Container>
-                            <hr></hr>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                                <hr></hr>
                                 <h3><u>Canvas Settings</u></h3>
                                 <Row>
                                     <Col xs={12} md={6}>

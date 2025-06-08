@@ -1,6 +1,6 @@
 import React from "react";
 import {Modal,Container,Row,Col,Button, Form} from "react-bootstrap";
-import { FaBitbucket, FaCopy, FaEraser, FaPen, FaPowerOff, FaSave, FaTimes } from "react-icons/fa";
+import { FaBitbucket, FaCopy, FaEdit, FaEraser, FaPen, FaPowerOff, FaSave, FaTimes } from "react-icons/fa";
 import cursorEraser from "../img/eraser.png";
 import cursorPencil from "../img/pencil.png";
 import cursorFillBucket from "../img/fill_bucket.png";
@@ -31,7 +31,7 @@ export default class EditBrushModal extends React.Component {
             penState:1, // 0 - erase, 1 - pen
             bucketState:0, // 0 - off, 1 - on
             penStateUrls:[cursorEraser,cursorPencil,cursorFillBucketEraser,cursorFillBucket],
-            penStateNames:["Eraser","Draw"],
+            penStateNames:["Erase","Draw"],
 
             // modal tingies
             show: this.props.show,
@@ -93,6 +93,17 @@ export default class EditBrushModal extends React.Component {
             if (!this.props.show) {
                 this.setState({show:false});
             }
+            this.updateCanvasPos();
+        }
+    }
+
+    updateCanvasPos = () => {
+        if (this.canvasRef.current) {
+            const canvasParent = this.canvasRef.current.parentElement;
+            const parentWidth = canvasParent.clientWidth;
+            const canvasElemWidth = this.canvasRef.current.width;
+            if (parentWidth>=canvasElemWidth) canvasParent.classList.add("justify-content-center");
+            else canvasParent.classList.remove("justify-content-center");
         }
     }
 
@@ -165,6 +176,7 @@ export default class EditBrushModal extends React.Component {
                 if (this.canvasRef.current) {
                     this.canvasRef.current.width = canvasWidth;
                     this.canvasRef.current.height = canvasHeight;
+                    this.updateCanvasPos();
                     this.renderCanvas();
                 }
             });
@@ -270,6 +282,36 @@ export default class EditBrushModal extends React.Component {
 
         for (let row of matrix) {
             res.push([...row].reverse());
+        }
+
+        return res;
+    }
+
+    flipMatrixMainDiagonal = (matrix) => {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        let res = [];
+
+        for (let i = 0; i < cols; i++) {
+            res[i] = [];
+            for (let j = 0; j < rows; j++) {
+                res[i][j] = matrix[j][i];
+            }
+        }
+
+        return res;
+    }
+
+    flipMatrixAntiDiagonal = (matrix) => {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        let res = [];
+
+        for (let i = 0; i < cols; i++) {
+            res[i] = [];
+            for (let j = 0; j < rows; j++) {
+                res[i][j] = matrix[rows - 1 - j][cols - 1 - i];
+            }
         }
 
         return res;
@@ -381,7 +423,7 @@ export default class EditBrushModal extends React.Component {
             return (
                 <>
                     <FaEraser style={{marginRight:"10px"}}></FaEraser>
-                    Eraser
+                    Erase
                 </>
             )
         } else if (penState===1) {
@@ -455,11 +497,27 @@ export default class EditBrushModal extends React.Component {
         });
     }
 
-    handleFlipHorizontally = () => {
+    handleFlip = (mode) => {
         const { currentBrushBoard } = this.state;
         if (!currentBrushBoard || currentBrushBoard.length === 0 || currentBrushBoard[0].length === 0) return;
 
-        const flippedMatrix = this.flipMatrixHorizontally(currentBrushBoard);
+        let flippedMatrix;
+        switch (mode) {
+            case 0:
+                flippedMatrix = this.flipMatrixHorizontally(currentBrushBoard);
+                break;
+            case 1:
+                flippedMatrix = this.flipMatrixVertically(currentBrushBoard);
+                break;
+            case 2:
+                flippedMatrix = this.flipMatrixMainDiagonal(currentBrushBoard);
+                break;
+            case 3:
+                flippedMatrix = this.flipMatrixAntiDiagonal(currentBrushBoard);
+                break;
+            default:
+                break;
+        }
         this.setState({ 
             currentBrushBoard: flippedMatrix,
             currentCanvasBoardHeight: flippedMatrix.length, 
@@ -470,20 +528,6 @@ export default class EditBrushModal extends React.Component {
         });
     }
 
-    handleFlipVertically = () => {
-        const { currentBrushBoard } = this.state;
-        if (!currentBrushBoard || currentBrushBoard.length === 0 || currentBrushBoard[0].length === 0) return;
-
-        const flippedMatrix = this.flipMatrixVertically(currentBrushBoard);
-        this.setState({ 
-            currentBrushBoard: flippedMatrix,
-            currentCanvasBoardHeight: flippedMatrix.length, 
-            currentCanvasBoardWidth: flippedMatrix[0].length,
-        }, () => {
-            this.resizeGrid(flippedMatrix[0].length, flippedMatrix.length);
-            this.handleUpdateCanvasSize();
-        });
-    }
 
     handleCopy = async () => {
         try {
@@ -513,12 +557,6 @@ export default class EditBrushModal extends React.Component {
         const canvasHeight = currentBrushBoard.length * cellHeight;
         return (
             <>
-                <style>
-                    {`.modal-content {
-                        width:${Math.max(canvasWidth+cellWidth,600)}px
-                    }
-                    `}
-                </style>
                 <Modal show={show} 
                 onHide={()=>{
                     if (this.state.hasUnsavedChanges) {
@@ -530,26 +568,22 @@ export default class EditBrushModal extends React.Component {
                     }
                 }}
                 dialogClassName="w-100"
-                onEntered={this.renderCanvas}>
-                    <div 
-                    className="w-100"
-                    style={{
-                        margin:"auto",
-                        fontFamily:"Rubik"
+                onEntered={this.renderCanvas}
+                size="xl"
+                style={{
+                    fontFamily:"Rubik",
+                    width:"100%",
                     }}>
-                        <Modal.Header data-bs-theme={darkMode ? "dark" : "light"} closeButton className={darkMode ? "bg-dark text-light" : ""}> 
-                            <h3>Edit Brush (Beta)</h3>
-                        </Modal.Header>
-                        <Modal.Body
-                        style={{
-                            justifyContent:"center",
-                            alignItems:"center",
-                            display:"flex",
-                            flexDirection:"column",
-                            minHeight: "100%",
-                            backgroundColor: darkMode ? "#212529" : "white",
-                        }}
-                        className={darkMode ? "bg-dark text-light" : ""}>
+                    <Modal.Header data-bs-theme={darkMode ? "dark" : "light"} closeButton className={darkMode ? "bg-dark text-light" : ""}> 
+                        <h3><FaEdit/> Edit Brush</h3>
+                    </Modal.Header>
+                    <Modal.Body
+                    style={{
+                        backgroundColor: darkMode ? "#212529" : "white",
+                        overflowY:"auto"
+                    }}
+                    className={darkMode ? "bg-dark text-light" : ""}>
+                        <div style={{width:"100%",display:"flex",overflowX:"auto"}}>
                             <canvas 
                             style={{
                                 width:`${canvasWidth}px`,
@@ -573,241 +607,245 @@ export default class EditBrushModal extends React.Component {
                                 e.preventDefault();
                                 this.setState({mouseIsDown:false});
                             }}
-                            // onTouchStart={(e) => {
-                            //     e.preventDefault();
-                            //     this.setState({ mouseIsDown: true }, () => {
-                            //         this.handleMouseMoveOrDown(e);
-                            //     });
-                            // }}
-                            // onTouchMove={(e)=>{
-                            //     e.preventDefault();
-                            //     this.handleMouseMoveOrDown(e);
-                            // }}
-                            // onTouchEnd={(e) => {
-                            //     e.preventDefault();
-                            //     this.setState({ mouseIsDown: false });
-                            // }}
-                            // onTouchCancel={(e) => {
-                            //     e.preventDefault();
-                            //     this.setState({ mouseIsDown: false });
-                            // }}
                             ref={this.canvasRef}></canvas>
-                            <hr></hr>
-                            <Container>
-                                <Row>
-                                    <Col xs={4}>
-                                        <h5>Brush Mode</h5>
-                                        <Button
-                                        className={darkMode ? "dark" : ""}
-                                        variant={`outline-${darkMode ? "light" : "dark"}`}
-                                        onClick={(e)=>{
-                                            this.togglePenState();
-                                        }}
-                                        style={{
-                                            height:"50px",
-                                            fontSize:"20px"
-                                        }}
-                                        >
-                                            {this.renderPenState(penState)}
-                                        </Button>
-                                    </Col>
-                                    <Col xs={4}>
-                                        <h5>Fill Bucket</h5>
-                                        <Button
-                                        className={darkMode ? "dark" : ""}
-                                        variant={`outline-${darkMode ? "light" : "dark"}`}
-                                        onClick={(e)=>{
-                                            this.toggleBucketState();
-                                        }}
-                                        style={{
-                                            height:"50px",
-                                            fontSize:"20px"
-                                        }}
-                                        >
-                                            {this.renderBucketState(bucketState)}
-                                        </Button>
-                                    </Col>
-                                    <Col xs={4}>
-                                        <h5>Rotation</h5>
-                                        <Row className="mb-1">
-                                            <Col style={{paddingRight:"5px"}}>
-                                                <Button className={darkMode ? "dark" : ""} onClick={this.handleRotateClockwise} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>↻</Button>
-                                            </Col>
-                                            <Col style={{paddingLeft:"5px"}}>
-                                                <Button className={darkMode ? "dark" : ""} onClick={this.handleRotateCounterClockwise} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>↺</Button>
-                                            </Col>
-                                        </Row>
-                                    </Col>
-                                </Row>
-                                <br></br>
-                                <Row>
-                                    <Col xs={4}>
-                                        <h5>Flip</h5>
-                                        <Row className="mb-1">
-                                            <Col style={{paddingRight:"5px"}}>
-                                                <Button className={darkMode ? "dark" : ""} onClick={this.handleFlipHorizontally} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>↔</Button>
-                                            </Col>
-                                            <Col style={{paddingLeft:"5px"}}>
-                                                <Button className={darkMode ? "dark" : ""} onClick={this.handleFlipVertically} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>↕</Button>
-                                            </Col>
-                                        </Row>
-                                    </Col>
-                                    <Col xs={4}>
-                                        <h5>Width</h5>
-                                        <Form.Control
-                                        type="number"
-                                        min="1"
-                                        value={this.state.currentBrushBoardWidth}
-                                        onChange={(e)=>{
-                                            if (this.state.currentBrushBoardWidth>1) {
-                                                this.setState({currentBrushBoardWidth:e.target.value});
-                                                this.resizeGrid(e.target.value,this.state.currentBrushBoardHeight);
-                                            }
-                                        }}
-                                        style={{marginBottom:"15px",fontSize:"24px"}}
-                                        />
-                                        <Row>
-                                            <Col>
-                                                <Button className={darkMode ? "dark" : ""} onClick={()=>{
-                                                    if (currentBrushBoard) {
-                                                        const boardWidth = currentBrushBoard[0].length;
-                                                        const boardHeight = currentBrushBoard.length;
-                                                        if (boardWidth>1) {
-                                                            this.setState({
-                                                                currentBrushBoardWidth:boardWidth-1,
-                                                                currentBrushBoardHeight:boardHeight
-                                                            });
-                                                            this.resizeGrid(boardWidth-1,boardHeight);
-                                                        }
-                                                    }
-                                                }} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>-</Button>
-                                            </Col>
-                                            <Col>
-                                                <Button className={darkMode ? "dark" : ""} onClick={()=>{
-                                                    if (currentBrushBoard) {
-                                                        const boardWidth = currentBrushBoard[0].length;
-                                                        const boardHeight = currentBrushBoard.length;
+                        </div>
+                        <hr></hr>
+                        <Container>
+                            <Row>
+                                <Col xs={4}>
+                                    <h5>Brush Mode</h5>
+                                    <Button
+                                    className={darkMode ? "dark" : ""}
+                                    variant={`outline-${darkMode ? "light" : "dark"}`}
+                                    onClick={(e)=>{
+                                        this.togglePenState();
+                                    }}
+                                    style={{
+                                        width:"100%",
+                                        height:"45px",
+                                        fontSize:"20px"
+                                    }}
+                                    >
+                                        {this.renderPenState(penState)}
+                                    </Button>
+                                </Col>
+                                <Col xs={4}>
+                                    <h5>Fill Bucket</h5>
+                                    <Button
+                                    className={darkMode ? "dark" : ""}
+                                    variant={`outline-${darkMode ? "light" : "dark"}`}
+                                    onClick={(e)=>{
+                                        this.toggleBucketState();
+                                    }}
+                                    style={{
+                                        width:"100%",
+                                        height:"45px",
+                                        fontSize:"20px"
+                                    }}
+                                    >
+                                        {this.renderBucketState(bucketState)}
+                                    </Button>
+                                </Col>
+                                <Col xs={4}>
+                                    <h5>Rotate</h5>
+                                    <Row className="mb-1">
+                                        <Col style={{paddingRight:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={this.handleRotateClockwise} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>↻</Button>
+                                        </Col>
+                                        <Col style={{paddingLeft:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={this.handleRotateCounterClockwise} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>↺</Button>
+                                        </Col>
+                                    </Row>
+                                </Col>
+                            </Row>
+                            <br></br>
+                            <Row>
+                                <Col xs={4}>
+                                    <h5>Flip</h5>
+                                    <Row className="mb-1">
+                                        <Col style={{paddingRight:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>this.handleFlip(0)} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>↔</Button>
+                                        </Col>
+                                        <Col style={{paddingLeft:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>this.handleFlip(1)} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>↕</Button>
+                                        </Col>
+                                    </Row>
+                                    <Row className="mb-1">
+                                        <Col style={{paddingRight:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>this.handleFlip(2)} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>⤡</Button>
+                                        </Col>
+                                        <Col style={{paddingLeft:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>this.handleFlip(3)} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>⤢</Button>
+                                        </Col>
+                                    </Row>
+                                </Col>
+                                <Col xs={4}>
+                                    <h5>Width</h5>
+                                    <Form.Control
+                                    type="number"
+                                    min="1"
+                                    value={this.state.currentBrushBoardWidth}
+                                    onChange={(e)=>{
+                                        if (this.state.currentBrushBoardWidth>1) {
+                                            this.setState({currentBrushBoardWidth:e.target.value});
+                                            this.resizeGrid(e.target.value,this.state.currentBrushBoardHeight);
+                                        }
+                                    }}
+                                    style={{marginBottom:"15px",fontSize:"24px"}}
+                                    />
+                                    <Row>
+                                        <Col>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                                if (currentBrushBoard) {
+                                                    const boardWidth = currentBrushBoard[0].length;
+                                                    const boardHeight = currentBrushBoard.length;
+                                                    if (boardWidth>1) {
                                                         this.setState({
-                                                            currentBrushBoardWidth:boardWidth+1,
+                                                            currentBrushBoardWidth:boardWidth-1,
                                                             currentBrushBoardHeight:boardHeight
                                                         });
-                                                        this.resizeGrid(boardWidth+1,boardHeight);
+                                                        this.resizeGrid(boardWidth-1,boardHeight);
                                                     }
-                                                }} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>+</Button>
-                                            </Col>
-                                        </Row>
-                                    </Col>
-                                    <Col xs={4}>
-                                        <h5>Height</h5>
-                                        <Form.Control
-                                        type="number"
-                                        min="1"
-                                        value={this.state.currentBrushBoardHeight}
-                                        onChange={(e)=>{
-                                            if (this.state.currentBrushBoardHeight>1) {
-                                                this.setState({currentBrushBoardHeight:e.target.value});
-                                                this.resizeGrid(this.state.currentBrushBoardWidth,e.target.value);
-                                            }
-                                        }}
-                                        style={{marginBottom:"15px",fontSize:"24px"}}
-                                        />
-                                        <Row>
-                                            <Col>
-                                                <Button className={darkMode ? "dark" : ""} onClick={()=>{
-                                                    if (currentBrushBoard) {
-                                                        const boardWidth = currentBrushBoard[0].length;
-                                                        const boardHeight = currentBrushBoard.length;
-                                                        if (boardHeight>1) {
-                                                            this.setState({
-                                                                currentBrushBoardWidth:boardWidth,
-                                                                currentBrushBoardHeight:boardHeight-1
-                                                            });
-                                                            this.resizeGrid(boardWidth,boardHeight-1);
-                                                        }
-                                                    }
-                                                }} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>-</Button>
-                                            </Col>
-                                            <Col>
-                                                <Button className={darkMode ? "dark" : ""} onClick={()=>{
-                                                    if (currentBrushBoard) {
-                                                        const boardWidth = currentBrushBoard[0].length;
-                                                        const boardHeight = currentBrushBoard.length;
+                                                }
+                                            }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>-</Button>
+                                        </Col>
+                                        <Col>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                                if (currentBrushBoard) {
+                                                    const boardWidth = currentBrushBoard[0].length;
+                                                    const boardHeight = currentBrushBoard.length;
+                                                    this.setState({
+                                                        currentBrushBoardWidth:boardWidth+1,
+                                                        currentBrushBoardHeight:boardHeight
+                                                    });
+                                                    this.resizeGrid(boardWidth+1,boardHeight);
+                                                }
+                                            }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>+</Button>
+                                        </Col>
+                                    </Row>
+                                </Col>
+                                <Col xs={4}>
+                                    <h5>Height</h5>
+                                    <Form.Control
+                                    type="number"
+                                    min="1"
+                                    value={this.state.currentBrushBoardHeight}
+                                    onChange={(e)=>{
+                                        if (this.state.currentBrushBoardHeight>1) {
+                                            this.setState({currentBrushBoardHeight:e.target.value});
+                                            this.resizeGrid(this.state.currentBrushBoardWidth,e.target.value);
+                                        }
+                                    }}
+                                    style={{marginBottom:"15px",fontSize:"24px"}}
+                                    />
+                                    <Row>
+                                        <Col>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                                if (currentBrushBoard) {
+                                                    const boardWidth = currentBrushBoard[0].length;
+                                                    const boardHeight = currentBrushBoard.length;
+                                                    if (boardHeight>1) {
                                                         this.setState({
                                                             currentBrushBoardWidth:boardWidth,
-                                                            currentBrushBoardHeight:boardHeight+1
+                                                            currentBrushBoardHeight:boardHeight-1
                                                         });
-                                                        this.resizeGrid(boardWidth,boardHeight+1);
+                                                        this.resizeGrid(boardWidth,boardHeight-1);
                                                     }
-                                                }} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                                style={{
-                                                    fontSize:"25px",
-                                                    width:"45px",
-                                                    height:"45px",
-                                                    padding:0
-                                                }}>+</Button>
-                                            </Col>
-                                        </Row>
-                                    </Col>
-                                </Row>
-                            </Container>
-                        </Modal.Body>
-                        <Modal.Footer className={darkMode ? "bg-dark text-light" : ""}>
-                            <Button variant="success" onClick={this.handleCopy}><FaCopy/> Copy Matrix Data</Button>
-                            <Button variant="danger" onClick={()=>{
-                                if (this.state.hasUnsavedChanges) {
-                                    if (!window.confirm("Discard changes?")) return;
-                                }
-                                this.props.onClose();
-                            }}><FaTimes/> Close (Discard Changes)</Button>
-                            <Button onClick={() => {
-                                this.props.onSave(this.state.currentBrushBoard);
-                                this.setState({ hasUnsavedChanges: false });
-                                this.props.onClose();
-                            }}><FaSave/> Save Changes</Button>
-                        </Modal.Footer>
-                    </div>
+                                                }
+                                            }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>-</Button>
+                                        </Col>
+                                        <Col>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                                if (currentBrushBoard) {
+                                                    const boardWidth = currentBrushBoard[0].length;
+                                                    const boardHeight = currentBrushBoard.length;
+                                                    this.setState({
+                                                        currentBrushBoardWidth:boardWidth,
+                                                        currentBrushBoardHeight:boardHeight+1
+                                                    });
+                                                    this.resizeGrid(boardWidth,boardHeight+1);
+                                                }
+                                            }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{
+                                                fontSize:"25px",
+                                                width:"100%",
+                                                height:"45px",
+                                                padding:0
+                                            }}>+</Button>
+                                        </Col>
+                                    </Row>
+                                </Col>
+                            </Row>
+                        </Container>
+                    </Modal.Body>
+                    <Modal.Footer className={darkMode ? "bg-dark text-light" : ""}>
+                        <Button variant="success" onClick={this.handleCopy}><FaCopy/> Copy Matrix Data</Button>
+                        <Button variant="danger" onClick={()=>{
+                            if (this.state.hasUnsavedChanges) {
+                                if (!window.confirm("Discard changes?")) return;
+                            }
+                            this.props.onClose();
+                        }}><FaTimes/> Close (Discard Changes)</Button>
+                        <Button onClick={() => {
+                            this.props.onSave(this.state.currentBrushBoard);
+                            this.setState({ hasUnsavedChanges: false });
+                            this.props.onClose();
+                        }}><FaSave/> Save Changes</Button>
+                    </Modal.Footer>
                 </Modal>
             </>
         );

@@ -1,4 +1,3 @@
-import 'rc-slider/assets/index.css';
 import React from "react";
 import { Button, Col, Dropdown, Form, Modal, Row } from "react-bootstrap";
 import fullLexicon from "../fullLexicon";
@@ -10,7 +9,7 @@ export default class FullLexiconModal extends React.Component {
         super(props);
         this.state = {
             brushPage:0,
-            resultsSize:5,
+            resultsSize:10,
             brushData:[],
             maxBrushPage:0,
             currentBrush:this.props.currentBrush,
@@ -47,6 +46,11 @@ export default class FullLexiconModal extends React.Component {
                 this.setState({show:false});
             }
         }
+        document.querySelectorAll(".modal-content").forEach((elem)=>{
+            elem.setAttribute("style",`
+                max-height:750px;
+            `);
+        });
     }
 
     filterLexicon = () => {
@@ -121,12 +125,6 @@ export default class FullLexiconModal extends React.Component {
                 <style>
                     {`
                     
-                    .modal-content {
-                        font-family:Rubik;
-                        width:100%;
-                        height:800px
-                    }
-                    
                     /* width */
                     ::-webkit-scrollbar {
                     width: 10px;
@@ -149,11 +147,11 @@ export default class FullLexiconModal extends React.Component {
 
                     /* SLIDERS */
                     .custom-slider-dark .ant-slider-track {
-                        background-color: #52c41a;
+                        background-color:rgb(195, 246, 255);
                     }
 
                     .custom-slider-dark .ant-slider-handle {
-                        border-color: #52c41a;
+                        border-color:rgb(26, 196, 182);
                     }
 
                     .custom-slider-dark .ant-slider-rail {
@@ -165,9 +163,13 @@ export default class FullLexiconModal extends React.Component {
                 <Modal show={show} 
                 onHide={this.props.onClose}
                 size="xl"
-                dialogClassName="w-100">
+                dialogClassName="w-100"
+                style={{
+                    fontFamily:"Rubik",
+                    width:"100%",
+                }}>
                     <Modal.Header data-bs-theme={darkMode ? "dark" : "light"} closeButton className={darkMode ? "bg-dark text-light" : ""}>
-                        <h3>Select a Brush!</h3>
+                        <h3>Full Lexicon</h3>
                     </Modal.Header>
                     <Modal.Body
                     style={{
@@ -179,6 +181,7 @@ export default class FullLexiconModal extends React.Component {
                         backgroundColor: darkMode ? "#212529" : "white",
                     }}
                     className={darkMode ? "bg-dark text-light" : ""}>
+                        <h4><u>Click on a brush to select!</u></h4>
                         <h6 style={{alignSelf:"flex-start"}}>Filter by Name:</h6>
                         <Form.Control
                         type="text"
