@@ -710,7 +710,11 @@ export class Game extends React.Component {
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
                     <Row className="justify-content-center">
-                        <Col xl={8} lg={12} md={12} sm={12} xs={12} className="game-canvas-container">
+                        <Col xl={8} lg={12} md={12} sm={12} xs={12} 
+                        style={{
+                            maxWidth:`${this.state.canvasWidth}px`
+                        }}
+                        className="game-canvas-container">
                             <GameCanvas 
                             canvasWidth={this.state.canvasWidth} 
                             canvasHeight={this.state.canvasHeight}
@@ -745,8 +749,12 @@ export class Game extends React.Component {
                                 if (!this.state.isDragging) {
                                     const canvas = e.target;
                                     const rect = canvas.getBoundingClientRect();
-                                    const canvasMouseX = e.clientX-rect.left;
-                                    const canvasMouseY = e.clientY-rect.top;
+
+                                    const scaleX = canvas.width/rect.width;
+                                    const scaleY = canvas.height/rect.height;
+
+                                    const canvasMouseX = (e.clientX - rect.left + cellWidth) * scaleX;
+                                    const canvasMouseY = (e.clientY - rect.top + cellHeight) * scaleY;
 
                                     const adjustedX = (canvasMouseX - this.state.offset.x) / this.state.scale;
                                     const adjustedY = (canvasMouseY - this.state.offset.y) / this.state.scale;
@@ -784,8 +792,12 @@ export class Game extends React.Component {
                                 
                                 const canvas = e.target;
                                 const rect = canvas.getBoundingClientRect();
-                                const canvasMouseX = e.clientX-rect.left;
-                                const canvasMouseY = e.clientY-rect.top;
+
+                                const scaleX = canvas.width/rect.width;
+                                const scaleY = canvas.height/rect.height;
+
+                                const canvasMouseX = (e.clientX - rect.left + cellWidth) * scaleX;
+                                const canvasMouseY = (e.clientY - rect.top + cellHeight) * scaleY;
 
                                 const { scale,offset } = this.state;
 
@@ -1154,7 +1166,7 @@ export class Game extends React.Component {
                             <hr></hr>
                             <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
                                 <h3>Mouse Settings</h3>
-                                <p style={{fontSize:"20px"}}>Brush Anchor Position: <strong>{["Top Left","Top","Top Right","Left","Right","Bottom Left","Bottom","Bottom Right"][this.state.brushAnchorPosition]}</strong></p>
+                                <p style={{fontSize:"20px"}}>Brush Anchor Position: <strong>{["Top Left","Top","Top Right","Left","Center","Right","Bottom Left","Bottom","Bottom Right"][this.state.brushAnchorPosition]}</strong></p>
                                 <Container className={"mouse-align-container"}>
                                     <Row className={"mouse-align-row"}>
                                         <Col className={"mouse-align-col"}>

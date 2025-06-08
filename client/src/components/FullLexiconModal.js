@@ -1,7 +1,9 @@
+import 'rc-slider/assets/index.css';
 import React from "react";
-import { Button, Col, Form, Modal, Row } from "react-bootstrap";
+import { Button, Col, Dropdown, Form, Modal, Row } from "react-bootstrap";
 import fullLexicon from "../fullLexicon";
 import Brush from "./Brush";
+import {Slider} from "antd";
 
 export default class FullLexiconModal extends React.Component {
     constructor(props) {
@@ -15,12 +17,17 @@ export default class FullLexiconModal extends React.Component {
             currentBrushBoard:this.props.currentBrushBoard,
 
             lexicon:fullLexicon,
+
+            // filters
             search:"",
+            filterMaxWidth:100,
+            filterMaxHeight:100,
+            filterMinWidth:0,
+            filterMinHeight:0,
 
             show: this.props.show
         };
     }
-
 
     componentDidMount() {
         const {resultsSize,lexicon} = this.state;
@@ -43,15 +50,43 @@ export default class FullLexiconModal extends React.Component {
     }
 
     filterLexicon = () => {
-        let {lexicon,search,resultsSize} = this.state;
-        if (search!=="") {
-            lexicon = fullLexicon.filter(obj=>obj["name"].toLowerCase().includes(search.toLowerCase()));
-            this.setState({lexicon,maxBrushPage:Math.floor(lexicon.length/resultsSize)},()=>{
+        const {
+            search,
+            filterMaxWidth,
+            filterMaxHeight,
+            filterMinWidth,
+            filterMinHeight,
+            resultsSize,
+            brushPage
+        } = this.state;
+
+        let lexicon;
+        lexicon = fullLexicon
+            .filter(obj =>
+                obj.name.toLowerCase().includes(search.toLowerCase())
+            )
+            .filter(obj =>
+                obj.board &&
+                obj.board.length > filterMinHeight &&
+                obj.board.length <= filterMaxHeight &&
+                obj.board[0] &&
+                obj.board[0].length > filterMinWidth &&
+                obj.board[0].length <= filterMaxWidth
+            );
+
+        const maxBrushPage = Math.floor(lexicon.length / resultsSize);
+        const safeBrushPage = Math.max(0, Math.min(brushPage, maxBrushPage - 1));
+
+        this.setState(
+            {
+                lexicon,
+                maxBrushPage,
+                brushPage: safeBrushPage
+            },
+            () => {
                 this.updateBrushData();
-            });
-        } else this.setState({lexicon:fullLexicon,maxBrushPage:Math.floor(lexicon.length/resultsSize)},()=>{
-            this.updateBrushData();
-        });
+            }
+        );
     }
 
     updateBrushData = () => {
@@ -61,8 +96,6 @@ export default class FullLexiconModal extends React.Component {
         for (let i = 0;i<Math.min(resultsSize,lexicon.length);i++) {
             updatedBrushData.push(lexicon[i+brushPage*resultsSize]);
         }
-
-        console.log(lexicon);
 
         this.setState({
             brushData:updatedBrushData
@@ -82,15 +115,16 @@ export default class FullLexiconModal extends React.Component {
 
     render() {
         const {darkMode,colorDark,colorLight,borderColorDark,borderColorLight} = this.props;
-        const {brushData,show} = this.state;
+        const {brushData,show,filterMinHeight,filterMinWidth,filterMaxHeight,filterMaxWidth} = this.state;
         return (
             <>
                 <style>
                     {`
                     
                     .modal-content {
+                        font-family:Rubik;
                         width:100%;
-                        height:600px
+                        height:800px
                     }
                     
                     /* width */
@@ -111,6 +145,19 @@ export default class FullLexiconModal extends React.Component {
                     /* Handle on hover */
                     ::-webkit-scrollbar-thumb:hover {
                     background: #555; 
+                    }
+
+                    /* SLIDERS */
+                    .custom-slider-dark .ant-slider-track {
+                        background-color: #52c41a;
+                    }
+
+                    .custom-slider-dark .ant-slider-handle {
+                        border-color: #52c41a;
+                    }
+
+                    .custom-slider-dark .ant-slider-rail {
+                        background-color: #444;
                     }
                     
                     `}
@@ -142,6 +189,53 @@ export default class FullLexiconModal extends React.Component {
                         placeholder="Search by Name"
                         className={darkMode ? 'bg-dark text-white' : 'bg-light text-dark'}
                         />
+                        <br></br>
+                        <Row style={{alignSelf:"flex-start",minWidth:"500px"}}>
+                            <Col xs={6}>
+                                <h6 style={{alignSelf:"flex-start"}}>Filter by Width:</h6>
+                                <Slider
+                                range
+                                min={0}
+                                max={100}
+                                defaultValue={[filterMinWidth, filterMaxWidth]}
+                                pushable={true}
+                                onChange={(width)=>{
+                                    const [filterMinWidth,filterMaxWidth] = width;
+                                    this.setState({
+                                        filterMinWidth,
+                                        filterMaxWidth
+                                    },()=>{
+                                        this.filterLexicon();
+                                    });
+                                }}
+                                step={1}
+                                placeholder="Filter by width"
+                                className={darkMode ? 'custom-slider-dark' : 'custom-slider-light'}
+                                />
+                            </Col>
+                            <Col xs={6}>
+                                <h6 style={{alignSelf:"flex-start"}}>Filter by Height:</h6>
+                                <Slider
+                                range
+                                min={0}
+                                max={100}
+                                defaultValue={[filterMinHeight, filterMaxHeight]}
+                                pushable={true}
+                                onChange={(height)=>{
+                                    const [filterMinHeight,filterMaxHeight] = height;
+                                    this.setState({
+                                        filterMinHeight,
+                                        filterMaxHeight
+                                    },()=>{
+                                        this.filterLexicon();
+                                    });
+                                }}
+                                step={1}
+                                placeholder="Filter by height"
+                                className={darkMode ? 'custom-slider-dark' : 'custom-slider-light'}
+                                />
+                            </Col>
+                        </Row>
                         <hr></hr>
                         <Row style={{overflowY:"auto"}}>
                             {
@@ -179,9 +273,30 @@ export default class FullLexiconModal extends React.Component {
                                             board={brush.board} />
                                         </Col>)
                                     } else return <><p>No Brush Found!</p></>
-                                }) : <><p>No Brushes Found!</p></>
+                                }) : <div><p>No Brushes Found!</p></div>
                             }
                         </Row>
+                        <br></br>
+                        <div style={{ display: "flex",width:"100%", alignItems: "center", gap: "8px" }}>
+                            <label htmlFor="resultsDropdown">Results per page:</label>
+                            <Dropdown onSelect={eventKey=>{
+                                this.setState({
+                                    resultsSize:eventKey
+                                },()=>{
+                                    this.filterLexicon();
+                                });
+                            }}>
+                                <Dropdown.Toggle variant={"outline-" + (darkMode ? "light" : "dark")}>
+                                    {this.state.resultsSize}
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu>
+                                    <Dropdown.Item eventKey={5} key={5}>{5}</Dropdown.Item>
+                                    <Dropdown.Item eventKey={10} key={10}>{10}</Dropdown.Item>
+                                    <Dropdown.Item eventKey={25} key={25}>{25}</Dropdown.Item>
+                                    <Dropdown.Item eventKey={50} key={50}>{50}</Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                        </div>
                     </Modal.Body>
                     <Modal.Footer 
                         className={darkMode ? "bg-dark text-light" : ""}
@@ -239,4 +354,3 @@ export default class FullLexiconModal extends React.Component {
         )
     }
 }
-

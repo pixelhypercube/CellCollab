@@ -2,7 +2,6 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  max-width:900px;
 }
 
 .brush-preview-container {
@@ -176,7 +175,7 @@ a {
 }
 
 .mouse-align-btn.pos-selected {
-  background:rgb(41, 125, 41);
+  background:rgb(182, 88, 0);
 }
 
 /* DARK MODE */

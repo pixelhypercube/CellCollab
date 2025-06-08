@@ -102,48 +102,64 @@ export default class GameCanvas extends React.Component {
     handleTouchMove = (e) => {
         e.preventDefault();
 
-        if (e.touches.length===1 && this.state.dragging) {
-            const touch = e.touches[0];
-            const dx = touch.clientX-this.state.lastMousePosition.x;
-            const dy = touch.clientY-this.state.lastMousePosition.y;
+        const canvas = this.canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
 
-            this.setState((prevState)=>{
+        if (e.touches.length === 1 && this.state.dragging) {
+            const touch = e.touches[0];
+            const currentX = (touch.clientX - rect.left + this.state.cellWidth) * scaleX;
+            const currentY = (touch.clientY - rect.top + this.state.cellWidth) * scaleY;
+
+            const lastX = this.state.lastMousePosition.x;
+            const lastY = this.state.lastMousePosition.y;
+
+            const dx = currentX - lastX;
+            const dy = currentY - lastY;
+
+            this.setState((prevState) => {
                 const newOffset = {
-                    x:prevState.offset.x + dx,
-                    y:prevState.offset.y + dy
+                    x: prevState.offset.x + dx,
+                    y: prevState.offset.y + dy
                 };
 
                 if (this.props.onTransformChange) {
-                    this.props.onTransformChange({offset:newOffset,scale:prevState.scale});
+                    this.props.onTransformChange({
+                        offset: newOffset,
+                        scale: prevState.scale
+                    });
                 }
 
                 return {
-                    offset:newOffset,
-                    lastMousePosition:{
-                        x:touch.clientX,
-                        y:touch.clientY
+                    offset: newOffset,
+                    lastMousePosition: {
+                        x: currentX,
+                        y: currentY
                     }
-                }
-            },this.canvasRender);
-        } else if (e.touches.length===2) {
-            const [touch1,touch2] = e.touches;
+                };
+            }, this.canvasRender);
+
+        } else if (e.touches.length === 2) {
+            const [touch1, touch2] = e.touches;
             const dist = Math.sqrt(
-                Math.pow(touch2.clientX-touch1.clientX,2) + 
-                Math.pow(touch2.clientY-touch1.clientY,2)
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                Math.pow(touch2.clientY - touch1.clientY, 2)
             );
 
-            const scaleChange = dist/this.state.initialPinchDistance;
-            const newScale = Math.min(Math.max(this.state.initialScale*scaleChange,0.1),3);
+            const scaleChange = dist / this.state.initialPinchDistance;
+            const newScale = Math.min(Math.max(this.state.initialScale * scaleChange, 0.1), 3);
 
-            this.setState((prevState)=>{
+            this.setState((prevState) => {
                 if (this.props.onTransformChange) {
                     this.props.onTransformChange({
-                        offset:prevState.offset,
-                        scale:newScale
+                        offset: prevState.offset,
+                        scale: newScale
                     });
                 }
-                return {scale:newScale};
-            },this.canvasRender);
+
+                return { scale: newScale };
+            }, this.canvasRender);
         }
     }
 
@@ -152,9 +168,14 @@ export default class GameCanvas extends React.Component {
     }
 
     handleMouseDown = (e) => {
-        const rect = this.canvasRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        const canvas = this.canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+
+        const scaleX = canvas.width/rect.width;
+        const scaleY = canvas.height/rect.height;
+
+        const mouseX = (e.clientX - rect.left + this.state.cellWidth) * scaleX;
+        const mouseY = (e.clientY - rect.top + this.state.cellWidth) * scaleY;
 
         this.setState({dragging:true,lastMousePosition:{x:mouseX,y:mouseY}});
     }
@@ -164,9 +185,14 @@ export default class GameCanvas extends React.Component {
         if (board && board.length>0) {
             const n = board.length, m = board[0].length;
 
-            const rect = this.canvasRef.current.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            const canvas = this.canvasRef.current;
+            const rect = canvas.getBoundingClientRect();
+
+            const scaleX = canvas.width/rect.width;
+            const scaleY = canvas.height/rect.height;
+
+            const mouseX = (e.clientX - rect.left + cellWidth) * scaleX;
+            const mouseY = (e.clientY - rect.top + cellWidth) * scaleY;
 
             if (this.state.dragging) {
                 const dx = mouseX - this.state.lastMousePosition.x;
@@ -598,6 +624,7 @@ export default class GameCanvas extends React.Component {
                 border:`2px solid ${darkMode ? `white` : `black`}`,
                 cursor: dragging ? "grabbing" : `url(${brushImgUrl}) 0 32, auto`,
                 width:"100%",
+                maxWidth:`${canvasWidth}px`
             }} 
             // onWheel={this.handleWheel}
             onMouseDown={this.props.onMouseDown}
