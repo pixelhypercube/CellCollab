@@ -14,6 +14,7 @@ import HowToPlay from "./components/HowToPlay";
 import brushes from "./brushList.js";
 import EditBrushModal from "./components/EditBrushModal.js";
 import FullLexiconModal from "./components/FullLexiconModal.js";
+import logoImg from "./img/logo.png";
 
 const MySwal = withReactContent(Swal);
 
@@ -640,7 +641,8 @@ export class Game extends React.Component {
         <div>
             <header className={darkMode ? "dark" : ""}>
                 <div id="toggle-light-dark" onClick={this.handleToggleDarkMode}>{darkMode ? <FaMoon></FaMoon> : <FaSun></FaSun>}</div>
-                <h1>CellCollab</h1>
+                {/* <h1>CellCollab</h1> */}
+                <img alt="logo" style={{imageRendering:"pixelated",width:"256px"}} src={logoImg}/>
                 <h5>A Multiplayer Sandbox Implementation of <a  className={darkMode ? "dark" : ""} href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a></h5>
                 <a className={darkMode ? "dark" : ""} href="https://github.com/pixelhypercube/mp-conway-sandbox">Github</a>
             </header>
@@ -1039,9 +1041,11 @@ export class Game extends React.Component {
                                     <FullLexiconModal
                                     darkMode={darkMode}
                                     colorLight={"#DDDDDD"}
-                                    colorDark={"#222222"}
-                                    borderColorDark={"#AAAAAA"}
-                                    borderColorLight={"#555555"}
+                                    colorDark={"#1A1A1A"}
+                                    selectedColorLight={"#BBBBBB"}
+                                    selectedColorDark={"#2A2A2A"}
+                                    borderColorDark={"#CCCCCC"}
+                                    borderColorLight={"#000000"}
                                     show={this.state.fullLexiconModalOpened}
                                     currentBrush={this.state.currentBrush}
                                     onBrushChange={(newBrush,newBrushBoard)=>this.setState({
@@ -1096,7 +1100,7 @@ export class Game extends React.Component {
                                             this.setState({ brushPage: brushPage === 0 ? brushPageNames.length - 1 : brushPage - 1 });
                                         }}
                                     >
-                                        {brushPage === 0 ? `< Prev (${brushPageNames[brushPageNames.length - 1]})` : `< Prev (${brushPageNames[brushPage - 1]})`}
+                                        {brushPage === 0 ? `← Prev (${brushPageNames[brushPageNames.length - 1]})` : `← Prev (${brushPageNames[brushPage - 1]})`}
                                     </Button>
 
                                     {/* Next Button */}
@@ -1107,7 +1111,7 @@ export class Game extends React.Component {
                                             this.setState({ brushPage: brushPage === brushPageNames.length - 1 ? 0 : brushPage + 1 });
                                         }}
                                     >
-                                        {brushPage === brushPageNames.length - 1 ? `Next (${brushPageNames[0]}) >` : `Next (${brushPageNames[brushPage + 1]}) >`}
+                                        {brushPage === brushPageNames.length - 1 ? `Next (${brushPageNames[0]}) →` : `Next (${brushPageNames[brushPage + 1]}) →`}
                                     </Button>
                                 </div>
                             </Container>

@@ -1,4 +1,6 @@
-# 🧬 CellCollab
+<img alt="logo" width="600" style="image-rendering: pixelated;" src="./logo.png">
+
+# CellCollab
 
 <img alt="demo" src="./demo.gif"/>
 

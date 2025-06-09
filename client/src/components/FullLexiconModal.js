@@ -31,7 +31,7 @@ export default class FullLexiconModal extends React.Component {
     componentDidMount() {
         const {resultsSize,lexicon} = this.state;
         this.setState({
-            maxBrushPage:Math.floor(lexicon.length/resultsSize)
+            maxBrushPage:Math.max(Math.floor(lexicon.length/resultsSize),1)
         },()=>{
             this.updateBrushData();
         });
@@ -48,7 +48,7 @@ export default class FullLexiconModal extends React.Component {
         }
         document.querySelectorAll(".modal-content").forEach((elem)=>{
             elem.setAttribute("style",`
-                max-height:750px;
+                max-height:900px;
             `);
         });
     }
@@ -78,7 +78,7 @@ export default class FullLexiconModal extends React.Component {
                 obj.board[0].length <= filterMaxWidth
             );
 
-        const maxBrushPage = Math.floor(lexicon.length / resultsSize);
+        const maxBrushPage = Math.max(1, Math.floor(lexicon.length / resultsSize));
         const safeBrushPage = Math.max(0, Math.min(brushPage, maxBrushPage - 1));
 
         this.setState(
@@ -118,7 +118,7 @@ export default class FullLexiconModal extends React.Component {
     }
 
     render() {
-        const {darkMode,colorDark,colorLight,borderColorDark,borderColorLight} = this.props;
+        const {darkMode,colorDark,colorLight,selectedColorDark,selectedColorLight,borderColorDark,borderColorLight} = this.props;
         const {brushData,show,filterMinHeight,filterMinWidth,filterMaxHeight,filterMaxWidth} = this.state;
         return (
             <>
@@ -169,7 +169,7 @@ export default class FullLexiconModal extends React.Component {
                     width:"100%",
                 }}>
                     <Modal.Header data-bs-theme={darkMode ? "dark" : "light"} closeButton className={darkMode ? "bg-dark text-light" : ""}>
-                        <h3>Full Lexicon</h3>
+                        <h3>Full Lexicon - Click on a brush to select!</h3>
                     </Modal.Header>
                     <Modal.Body
                     style={{
@@ -181,7 +181,7 @@ export default class FullLexiconModal extends React.Component {
                         backgroundColor: darkMode ? "#212529" : "white",
                     }}
                     className={darkMode ? "bg-dark text-light" : ""}>
-                        <h4><u>Click on a brush to select!</u></h4>
+                        {/* <h4><u>Click on a brush to select!</u></h4> */}
                         <h6 style={{alignSelf:"flex-start"}}>Filter by Name:</h6>
                         <Form.Control
                         type="text"
@@ -272,6 +272,7 @@ export default class FullLexiconModal extends React.Component {
                                             darkMode={darkMode} 
                                             title={brush.name}
                                             color={darkMode ? colorDark : colorLight} 
+                                            selectedColor={darkMode ? selectedColorDark : selectedColorLight}
                                             borderColor={darkMode ? borderColorDark : borderColorLight} 
                                             board={brush.board} />
                                         </Col>)
@@ -310,7 +311,7 @@ export default class FullLexiconModal extends React.Component {
                         onClick={() => this.paginate(-1)} 
                         variant={`outline-${darkMode ? "light" : "dark"}`}
                     >
-                        Previous Page
+                        &larr; Previous Page
                     </Button>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -349,7 +350,7 @@ export default class FullLexiconModal extends React.Component {
                         onClick={() => this.paginate(1)} 
                         variant={`outline-${darkMode ? "light" : "dark"}`}
                     >
-                        Next Page
+                        Next Page &rarr;
                     </Button>
                     </Modal.Footer>
                 </Modal>

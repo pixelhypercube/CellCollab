@@ -47,25 +47,7 @@ const brushes = {
             colorDark:"#013c01",
             borderColorLight:"#00b800",
             borderColorDark:"#95ff95",
-        },
-        {
-            name:"X Cross (7x7)",
-            board:[
-                [1,0,0,0,0,0,0,0,1],
-                [0,1,0,0,0,0,0,1,0],
-                [0,0,1,0,0,0,1,0,0],
-                [0,0,0,1,0,1,0,0,0],
-                [0,0,0,0,1,0,0,0,0],
-                [0,0,0,1,0,1,0,0,0],
-                [0,0,1,0,0,0,1,0,0],
-                [0,1,0,0,0,0,0,1,0],
-                [1,0,0,0,0,0,0,0,1]
-            ],
-            colorLight:"#ccffcc",
-            colorDark:"#013c01",
-            borderColorLight:"#00b800",
-            borderColorDark:"#95ff95",
-        },
+        }
     ],
     "Still Lifes":[
         {
