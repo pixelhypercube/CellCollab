@@ -15,6 +15,7 @@ import brushes from "./brushList.js";
 import EditBrushModal from "./components/EditBrushModal.js";
 import FullLexiconModal from "./components/FullLexiconModal.js";
 import logoImg from "./img/logo.png";
+import PlayersList from "./components/PlayersList.js";
 
 const MySwal = withReactContent(Swal);
 
@@ -130,6 +131,9 @@ export class Game extends React.Component {
             darkMode:true,
             iterations:0,
             speed: 100,
+
+            activePlayersListOpened:false,
+            activePlayersListWidth:200,
 
             // brush preview
             rotation:0,
@@ -637,8 +641,7 @@ export class Game extends React.Component {
     }
 
     render() {
-    const { additionalOptionsEnabled,board,isRunning,username,roomId,brushPreviewOpened,sidebarWidth,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames,modalCellHeight,modalCellWidth } = this.state;
-
+    const { additionalOptionsEnabled,board,isRunning,username,roomId,activePlayers,activePlayersListOpened,activePlayersListWidth,brushPreviewOpened,sidebarWidth,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames,modalCellHeight,modalCellWidth } = this.state;
     return (
         <div>
             <header className={darkMode ? "dark" : ""}>
@@ -744,8 +747,41 @@ export class Game extends React.Component {
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
                     <Container className="justify-content-center">
-                        {/* invisible div to make brush settings dialog open */}
-
+                        <div
+                            style={{
+                                position: 'fixed',
+                                top: '50%',
+                                left: `${activePlayersListOpened ? '0' : (-activePlayersListWidth+10)}px`,
+                                transform: 'translateY(-50%)',
+                                backgroundColor: darkMode ? '#333' : '#eee',
+                                color: darkMode ? '#fff' : '#000',
+                                borderTopRightRadius: '8px',
+                                borderBottomRightRadius: '8px',
+                                boxShadow: '0 0 8px rgba(0,0,0,0.2)',
+                                zIndex: 1045,
+                                width:`${activePlayersListWidth+12}px`,
+                                maxHeight: '90vh',
+                                overflowY: 'auto',
+                                transition: 'left 0.3s ease',
+                                display:"flex",
+                                padding:"5px"
+                            }}
+                            onMouseEnter={()=>this.setState({activePlayersListOpened:true})}
+                            onMouseLeave={()=>this.setState({activePlayersListOpened:false})}
+                            onClick={()=>this.setState({activePlayersListOpened:!activePlayersListOpened})}
+                        >
+                            <PlayersList 
+                            style={{
+                                display:activePlayersListOpened ? "block" : "none"
+                            }}
+                            darkMode={darkMode} 
+                            activePlayers={activePlayers} />
+                            <span style={{
+                                writingMode:"vertical-lr",
+                                fontSize:"12px",
+                                display:activePlayersListOpened ? "none" : "block",
+                            }}>Players List</span>
+                        </div>
                         <div
                             onClick={() => this.setState({ brushPreviewOpened: !brushPreviewOpened })}
                             onMouseEnter={() => this.setState({ brushPreviewOpened: true })}

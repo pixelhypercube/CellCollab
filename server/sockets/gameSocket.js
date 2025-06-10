@@ -61,7 +61,8 @@ module.exports = function(io) {
                     hoverPosition:null,
                     hoverCells:[]
                 };
-                io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]); 
+                socket.roomId = roomId;
+                io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers); 
                 socket.emit("selfJoined",{
                     playerSocketId:socket.id,
                     // activePlayers:rooms[roomId].activePlayers,
@@ -94,7 +95,8 @@ module.exports = function(io) {
                         hoverCells:[]
                     };
 
-                    io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
+                    socket.roomId = roomId;
+                    io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                     socket.emit("selfJoined",{
                         playerSocketId:socket.id,
                         // activePlayers:rooms[roomId].activePlayers[socket.id],
@@ -138,7 +140,8 @@ module.exports = function(io) {
                         hoverPosition:null,
                         hoverCells:[]
                     };
-                    io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
+                    socket.roomId = roomId;
+                    io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                     socket.emit("selfJoined",{
                         playerSocketId:socket.id,
                         // activePlayers:rooms[roomId].activePlayers[socket.id],
@@ -174,7 +177,8 @@ module.exports = function(io) {
                             hoverPosition:null,
                             hoverCells:[]
                         };
-                        io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
+                        socket.roomId = roomId;
+                        io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                         socket.emit("selfJoined",{
                             playerSocketId:socket.id,
                             // activePlayers:rooms[roomId].activePlayers[socket.id],
@@ -215,7 +219,8 @@ module.exports = function(io) {
                             hoverPosition:null,
                             hoverCells:[]
                         };
-                        io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers[socket.id]);
+                        socket.roomId = roomId;
+                        io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                         socket.emit("selfJoined",{
                             playerSocketId:socket.id,
                             // activePlayers:rooms[roomId].activePlayers[socket.id],
@@ -327,13 +332,14 @@ module.exports = function(io) {
             }
         });
 
-        socket.on("disconnect", (roomId) => {
+        socket.on("disconnect", () => {
+            const roomId = socket.roomId;
             if (rooms[roomId]) {
                 if (rooms[roomId].activePlayers) {
                     if (rooms[roomId].activePlayers[socket.id]) {
-                        delete rooms[roomId].activePlayers[socket.id];
                         const activePlayers = rooms[roomId].activePlayers;
                         const username = activePlayers[socket.id].username;
+                        delete rooms[roomId].activePlayers[socket.id];
                         io.to(roomId).emit("userLeave",activePlayers,username);
                     }
                 }
