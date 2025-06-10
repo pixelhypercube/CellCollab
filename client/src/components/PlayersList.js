@@ -9,7 +9,7 @@ export default class PlayersList extends React.Component {
 
     getUserNames = () => {
         const {activePlayers} = this.props;
-        return activePlayers ? Object.keys(activePlayers).map(clientId=>activePlayers[clientId].username) : [];
+        return activePlayers ? Object.keys(activePlayers).map(clientId=>activePlayers[clientId] ? activePlayers[clientId].username : "") : [];
     }
 
     render() {
@@ -21,7 +21,7 @@ export default class PlayersList extends React.Component {
                 backgroundColor: darkMode ? '#333' : '#eee',
                 fontSize:"13px"
             }}>
-                <h5 class="mt-2"><u>Players List:</u></h5>
+                <h5 className="mt-2"><u>Players List:</u></h5>
                 <Table variant={darkMode ? "dark" : "light"} striped bordered hover>
                     <thead>
                         <tr>
