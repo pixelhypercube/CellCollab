@@ -1,6 +1,6 @@
 import React from "react";
 import {Modal,Container,Row,Col,Button, Form} from "react-bootstrap";
-import { FaBitbucket, FaCopy, FaEdit, FaEraser, FaPen, FaPowerOff, FaSave, FaTimes } from "react-icons/fa";
+import { FaBitbucket, FaCopy, FaEdit, FaEraser, FaPen, FaPowerOff, FaRandom, FaSave } from "react-icons/fa";
 import cursorEraser from "../img/eraser.png";
 import cursorPencil from "../img/pencil.png";
 import cursorFillBucket from "../img/fill_bucket.png";
@@ -550,6 +550,19 @@ export default class EditBrushModal extends React.Component {
             });
         }
     }
+
+    generateRandomNoise = () => {
+        let currentBrushBoard = this.state.currentBrushBoard.map(row => [...row]); // deep clone
+        const n = currentBrushBoard.length, m = currentBrushBoard[0].length;
+        for (let i = 0;i<n;i++) {
+            for (let j = 0;j<m;j++) {
+                currentBrushBoard[i][j] = Math.round(Math.random());
+            }
+        }
+        this.setState({currentBrushBoard},()=>{
+            this.renderCanvas();
+        });
+    }
     
     render() {
         const {currentBrushBoard,darkMode,show,cellWidth,cellHeight,penState,bucketState} = this.state;
@@ -833,13 +846,8 @@ export default class EditBrushModal extends React.Component {
                         </Container>
                     </Modal.Body>
                     <Modal.Footer className={darkMode ? "bg-dark text-light" : ""}>
+                        <Button variant="secondary" onClick={this.generateRandomNoise}><FaRandom/> Generate Random Noise</Button>
                         <Button variant="success" onClick={this.handleCopy}><FaCopy/> Copy Matrix Data</Button>
-                        <Button variant="danger" onClick={()=>{
-                            if (this.state.hasUnsavedChanges) {
-                                if (!window.confirm("Discard changes?")) return;
-                            }
-                            this.props.onClose();
-                        }}><FaTimes/> Close (Discard Changes)</Button>
                         <Button onClick={() => {
                             this.props.onSave(this.state.currentBrushBoard);
                             this.setState({ hasUnsavedChanges: false });

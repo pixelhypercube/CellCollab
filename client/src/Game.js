@@ -1,7 +1,7 @@
 import React from "react";
 import socket from "./socket";
 import "./Game.css";
-import {Button,Container,Form,Row,Col,Alert, Dropdown} from "react-bootstrap";
+import {Button,Container,Form,Row,Col,Alert, Dropdown, Offcanvas} from "react-bootstrap";
 import Brush from "./components/Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -133,6 +133,8 @@ export class Game extends React.Component {
 
             // brush preview
             rotation:0,
+            brushPreviewOpened:false,
+            sidebarWidth:500,
 
             isDragging:false,
             mouseIsDown:false,
@@ -143,8 +145,8 @@ export class Game extends React.Component {
             
 
             // canvas stuff
-            canvasWidth:800,
-            canvasHeight:800,
+            canvasWidth:1600,
+            canvasHeight:900,
             cellWidth:30,
             cellHeight:30,
             canvasMouseX:0,
@@ -635,7 +637,7 @@ export class Game extends React.Component {
     }
 
     render() {
-    const { additionalOptionsEnabled,board,isRunning,username,roomId,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames,modalCellHeight,modalCellWidth } = this.state;
+    const { additionalOptionsEnabled,board,isRunning,username,roomId,brushPreviewOpened,sidebarWidth,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames,modalCellHeight,modalCellWidth } = this.state;
 
     return (
         <div>
@@ -741,8 +743,36 @@ export class Game extends React.Component {
                     <h1>
                         Room <span id="copy" onClick={this.handleCopy} style={{ cursor: "pointer" }}>{roomId} <FaCopy style={{ fontSize: "24px" }} /></span>
                     </h1>
-                    <Row className="justify-content-center">
-                        <Col xl={8} lg={12} md={12} sm={12} xs={12} 
+                    <Container className="justify-content-center">
+                        {/* invisible div to make brush settings dialog open */}
+
+                        <div
+                            onClick={() => this.setState({ brushPreviewOpened: !brushPreviewOpened })}
+                            onMouseEnter={() => this.setState({ brushPreviewOpened: true })}
+                            style={{
+                                position: 'fixed',
+                                top: '50%',
+                                right: this.state.brushPreviewOpened ? `${sidebarWidth}px` : '0',
+                                transform: 'translateY(-50%)',
+                                backgroundColor: darkMode ? '#333' : '#eee',
+                                color: darkMode ? '#fff' : '#000',
+                                padding: '6px 6px',
+                                borderTopLeftRadius: '8px',
+                                borderBottomLeftRadius: '8px',
+                                cursor: 'pointer',
+                                zIndex: 1055,
+                                writingMode: 'vertical-rl',
+                                textOrientation: 'upright',
+                                fontSize:"16px",
+                                fontWeight:"bold",
+                                boxShadow: '0 0 8px rgba(0,0,0,0.2)',
+                                transition: 'right 0.3s ease'
+                            }}
+                            >
+                            ⚙️ Settings Panel
+                        </div>
+
+                        <Container
                         style={{
                             maxWidth:`${this.state.canvasWidth}px`
                         }}
@@ -962,354 +992,374 @@ export class Game extends React.Component {
                                 </Button>
                             </Container>
                             <br></br>
-                        </Col>
-                        <Col xl={4} lg={12} md={12} sm={12} xs={12} className="brush-preview-container">
-                            <Container>
-                            <Container className="d-flex flex-column justify-content-center align-items-center">
-                                <h3 className="mb-3"><u>Brush Preview</u></h3>
-                                <div style={{
-                                    borderRadius:"10px",
-                                    border:"2px solid white",
-                                    width:"max-content",
-                                    alignItems:"center",
-                                    padding:"15px"
-                                    }}>
-                                    <BrushPreview
+                            {/* <Button
+                            className={darkMode ? "dark" : ""}
+                            variant={`outline-${darkMode ? "light" : "dark"}`}
+                            onClick={()=>this.setState({brushPreviewOpened:true})}
+                            style={{
+                                maxWidth:"250px",
+                                fontSize:"25px",
+                                display:"flex",
+                                alignSelf:"center"
+                            }}>⚙️ Toggle Settings</Button> */}
+                        </Container>
+                        <Offcanvas
+                        onHide={()=>this.setState({brushPreviewOpened:false})}
+                        show={brushPreviewOpened}
+                        className={darkMode ? "dark" : ""}
+                        style={{overflowY:"auto",fontFamily:"Rubik",width:`${sidebarWidth}px`}}
+                        placement="end">
+                            <Offcanvas.Header closeButton>
+                                <Offcanvas.Title>Settings Panel</Offcanvas.Title>
+                            </Offcanvas.Header>
+                            <Offcanvas.Body className="brush-preview-container">
+                                <Container>
+                                <Container className="d-flex flex-column justify-content-center align-items-center">
+                                    <h3 className="mb-3"><u>Brush Preview</u></h3>
+                                    <div style={{
+                                        borderRadius:"10px",
+                                        border:"2px solid white",
+                                        width:"max-content",
+                                        alignItems:"center",
+                                        padding:"15px"
+                                        }}>
+                                        <BrushPreview
+                                        darkMode={darkMode}
+                                        rotation={this.state.rotation}
+                                        currentBrushBoard={this.state.currentBrushBoard}
+                                        ></BrushPreview>
+                                    </div>
+                                    <br></br>
+                                    <Button 
+                                    className={darkMode ? "dark" : ""}
+                                    onClick={()=>this.setState({editModalOpened:true})}
+                                    variant={`outline-${darkMode ? "light" : "dark"}`}
+                                    style={{fontSize:"20px"}}
+                                    ><FaEdit/> Edit Brush</Button>
+                                    <EditBrushModal 
+                                    cellWidth={modalCellWidth}
+                                    cellHeight={modalCellHeight}
                                     darkMode={darkMode}
-                                    rotation={this.state.rotation}
+                                    show={this.state.editModalOpened}
                                     currentBrushBoard={this.state.currentBrushBoard}
-                                    ></BrushPreview>
-                                </div>
-                                <br></br>
-                                <Button 
-                                className={darkMode ? "dark" : ""}
-                                onClick={()=>this.setState({editModalOpened:true})}
-                                variant={`outline-${darkMode ? "light" : "dark"}`}
-                                style={{fontSize:"20px"}}
-                                ><FaEdit/> Edit Brush</Button>
-                                <EditBrushModal 
-                                cellWidth={modalCellWidth}
-                                cellHeight={modalCellHeight}
-                                darkMode={darkMode}
-                                show={this.state.editModalOpened}
-                                currentBrushBoard={this.state.currentBrushBoard}
-                                onClose={()=>{
-                                    this.setState({editModalOpened:false});
-                                }}
-                                onSave={(currentBrushBoard)=>{
-                                    this.setState({currentBrushBoard});
-                                }}
-                                ></EditBrushModal>
-                                {/* <h5>Rotation</h5>
-                                <Row className="mb-1">
-                                    <Col style={{paddingRight:"5px"}}>
-                                        <Button className={darkMode ? "dark" : ""} onClick={()=>{
-                                            const matrix = this.state.currentBrushBoard;
-                                            this.setState({currentBrushBoard:this.rotateMatrixClockwise(matrix)});
-                                        }} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                        style={{fontSize:"25px"}}>↻</Button>
-                                    </Col>
-                                    <Col style={{paddingLeft:"5px"}}>
-                                        <Button className={darkMode ? "dark" : ""} onClick={()=>{
-                                            const matrix = this.state.currentBrushBoard;
-                                            this.setState({currentBrushBoard:this.rotateMatrixCounterClockwise(matrix)});
-                                        }} variant={`outline-${darkMode ? "light" : "dark"}`}
-                                        style={{fontSize:"25px"}}>↺</Button>
-                                    </Col>
-                                </Row> */}
-                                <hr style={{width:"50%"}}></hr>
-                                {/* <h6>Step</h6> */}
-                                {/* WIP - Coming soon!!! */}
-                                {/* <Row className="mb-1">
-                                    <Col>
-                                        <Button variant={`outline-${darkMode ? "light" : "dark"}`}>Prev</Button>
-                                    </Col>
-                                    <Col>
-                                        <Button variant={`outline-${darkMode ? "light" : "dark"}`}>Next</Button>
-                                    </Col>
-                                </Row> */}
-                            </Container>
-                                <div style={{justifyContent:"space-evenly"}} className="d-flex">
-                                    <Button
-                                        className={darkMode ? "dark" : ""}
-                                        onClick={()=>this.setState({fullLexiconModalOpened:true})}
-                                        variant={`outline-${darkMode ? "light" : "dark"}`}
-                                        style={{fontSize:"20px"}}
-                                    >
-                                        <FaList/> Full Lexicon List
-                                    </Button>
-                                    <FullLexiconModal
-                                    darkMode={darkMode}
-                                    colorLight={"#DDDDDD"}
-                                    colorDark={"#1A1A1A"}
-                                    selectedColorLight={"#BBBBBB"}
-                                    selectedColorDark={"#2A2A2A"}
-                                    borderColorDark={"#CCCCCC"}
-                                    borderColorLight={"#000000"}
-                                    show={this.state.fullLexiconModalOpened}
-                                    currentBrush={this.state.currentBrush}
-                                    onBrushChange={(newBrush,newBrushBoard)=>this.setState({
-                                        currentBrush:newBrush,
-                                        currentBrushBoard:newBrushBoard
-                                    })}
-                                    onClose={()=>this.setState({fullLexiconModalOpened:false})}></FullLexiconModal>
-                                </div>
-                                <br></br>
-                                <h3><u>Palette</u></h3>
-                                {
-                                    Object.entries(brushes).map(([categoryName,brushList],idx)=>{
-                                        return (<Row key={categoryName} style={{display:brushPage===idx ? "flex" : "none"}}>
-                                            <h5>{categoryName}</h5>
-                                            {brushList.map((brush)=>{
-                                                const boardWidth = brush.board[0].length;
-                                        
-                                                let colProps = { xs: 12, sm: 6, md: 4, lg: 4 }; // default
-                                                if (boardWidth >= 10) {
-                                                    colProps = { xs: 12, sm: 12, md: 6, lg: 6 };
-                                                }
-                                                if (boardWidth >= 20) {
-                                                    colProps = { xs: 12 };
-                                                }
-                                                
-                                                return (<Col {...colProps} key={brush.name}>
-                                                    <Brush onClick={()=>{
-                                                        this.setState({currentBrush:brush.name,currentBrushBoard:brush.board});
-                                                    }} 
-                                                    selected={this.state.currentBrush===brush.name} 
-                                                    darkMode={darkMode} 
-                                                    title={brush.name}
-                                                    color={darkMode ? brush.colorDark : brush.colorLight} 
-                                                    borderColor={darkMode ? brush.borderColorDark : brush.borderColorLight} 
-                                                    board={brush.board} />
-
-                                                </Col>)
-                                            })}
-                                        </Row>)
-                                    })
-                                }
-                            </Container>
-                            {/* PAGINATION */}
-                            <br></br>
-                            <Container>
-                                <div style={{justifyContent:"space-evenly"}} className="d-flex">
-                                    {/* Previous Button */}
-                                    <Button
-                                        className={darkMode ? "dark" : ""}
-                                        variant={`outline-${darkMode ? "light" : "dark"}`}
-                                        onClick={() => {
-                                            this.setState({ brushPage: brushPage === 0 ? brushPageNames.length - 1 : brushPage - 1 });
-                                        }}
-                                    >
-                                        {brushPage === 0 ? `← Prev (${brushPageNames[brushPageNames.length - 1]})` : `← Prev (${brushPageNames[brushPage - 1]})`}
-                                    </Button>
-
-                                    {/* Next Button */}
-                                    <Button
-                                        className={darkMode ? "dark" : ""}
-                                        variant={`outline-${darkMode ? "light" : "dark"}`}
-                                        onClick={() => {
-                                            this.setState({ brushPage: brushPage === brushPageNames.length - 1 ? 0 : brushPage + 1 });
-                                        }}
-                                    >
-                                        {brushPage === brushPageNames.length - 1 ? `Next (${brushPageNames[0]}) →` : `Next (${brushPageNames[brushPage + 1]}) →`}
-                                    </Button>
-                                </div>
-                            </Container>
-                            <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                                <hr></hr>
-                                <h3><u>Color Scheme</u></h3>
-                                <Form.Check
-                                    style={{
-                                        alignSelf:"center",
-                                        marginBottom:"10px",
+                                    onClose={()=>{
+                                        this.setState({editModalOpened:false});
                                     }}
-                                    checked={this.state.colorSchemeEnabled}
-                                    onChange={()=>this.setState({colorSchemeEnabled:!this.state.colorSchemeEnabled})}
-                                    type="switch"
-                                    label="Enable Color Scheme"
-                                />
-                                <Dropdown onSelect={(eventKey) => {
-                                    this.setState({
-                                        selectedColorScheme: eventKey,
-                                        colorScheme: this.colorSchemesList[eventKey]
-                                    });
-                                }}
-                                style={{alignSelf:"center",marginBottom:"10px"}}
-                                >
-                                    <Dropdown.Toggle disabled={!this.state.colorSchemeEnabled} variant={"outline-" + (darkMode ? "light" : "dark")}
-                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
-                                        <span>{this.state.selectedColorScheme}</span>
-                                        <div style={{ display: "flex", gap: "2px" }}>
+                                    onSave={(currentBrushBoard)=>{
+                                        this.setState({currentBrushBoard});
+                                    }}
+                                    ></EditBrushModal>
+                                    {/* <h5>Rotation</h5>
+                                    <Row className="mb-1">
+                                        <Col style={{paddingRight:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                                const matrix = this.state.currentBrushBoard;
+                                                this.setState({currentBrushBoard:this.rotateMatrixClockwise(matrix)});
+                                            }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{fontSize:"25px"}}>↻</Button>
+                                        </Col>
+                                        <Col style={{paddingLeft:"5px"}}>
+                                            <Button className={darkMode ? "dark" : ""} onClick={()=>{
+                                                const matrix = this.state.currentBrushBoard;
+                                                this.setState({currentBrushBoard:this.rotateMatrixCounterClockwise(matrix)});
+                                            }} variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{fontSize:"25px"}}>↺</Button>
+                                        </Col>
+                                    </Row> */}
+                                    <hr style={{width:"50%"}}></hr>
+                                    {/* <h6>Step</h6> */}
+                                    {/* WIP - Coming soon!!! */}
+                                    {/* <Row className="mb-1">
+                                        <Col>
+                                            <Button variant={`outline-${darkMode ? "light" : "dark"}`}>Prev</Button>
+                                        </Col>
+                                        <Col>
+                                            <Button variant={`outline-${darkMode ? "light" : "dark"}`}>Next</Button>
+                                        </Col>
+                                    </Row> */}
+                                </Container>
+                                    <div style={{justifyContent:"space-evenly"}} className="d-flex">
+                                        <Button
+                                            className={darkMode ? "dark" : ""}
+                                            onClick={()=>this.setState({fullLexiconModalOpened:true})}
+                                            variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            style={{fontSize:"20px"}}
+                                        >
+                                            <FaList/> Full Lexicon List
+                                        </Button>
+                                        <FullLexiconModal
+                                        darkMode={darkMode}
+                                        colorLight={"#DDDDDD"}
+                                        colorDark={"#1A1A1A"}
+                                        selectedColorLight={"#BBBBBB"}
+                                        selectedColorDark={"#2A2A2A"}
+                                        borderColorDark={"#CCCCCC"}
+                                        borderColorLight={"#000000"}
+                                        show={this.state.fullLexiconModalOpened}
+                                        currentBrush={this.state.currentBrush}
+                                        onBrushChange={(newBrush,newBrushBoard)=>this.setState({
+                                            currentBrush:newBrush,
+                                            currentBrushBoard:newBrushBoard
+                                        })}
+                                        onClose={()=>this.setState({fullLexiconModalOpened:false})}></FullLexiconModal>
+                                    </div>
+                                    <br></br>
+                                    <h3><u>Palette</u></h3>
+                                    {
+                                        Object.entries(brushes).map(([categoryName,brushList],idx)=>{
+                                            return (<Row key={categoryName} style={{display:brushPage===idx ? "flex" : "none"}}>
+                                                <h5>{categoryName}</h5>
+                                                {brushList.map((brush)=>{
+                                                    const boardWidth = brush.board[0].length;
+                                            
+                                                    let colProps = { xs: 12, sm: 6, md: 4, lg: 4 }; // default
+                                                    if (boardWidth >= 10) {
+                                                        colProps = { xs: 12, sm: 12, md: 6, lg: 6 };
+                                                    }
+                                                    if (boardWidth >= 20) {
+                                                        colProps = { xs: 12 };
+                                                    }
+                                                    
+                                                    return (<Col {...colProps} key={brush.name}>
+                                                        <Brush onClick={()=>{
+                                                            this.setState({currentBrush:brush.name,currentBrushBoard:brush.board});
+                                                        }} 
+                                                        selected={this.state.currentBrush===brush.name} 
+                                                        darkMode={darkMode} 
+                                                        title={brush.name}
+                                                        color={darkMode ? brush.colorDark : brush.colorLight} 
+                                                        borderColor={darkMode ? brush.borderColorDark : brush.borderColorLight} 
+                                                        board={brush.board} />
+
+                                                    </Col>)
+                                                })}
+                                            </Row>)
+                                        })
+                                    }
+                                </Container>
+                                {/* PAGINATION */}
+                                <br></br>
+                                <Container>
+                                    <div style={{justifyContent:"space-evenly"}} className="d-flex">
+                                        {/* Previous Button */}
+                                        <Button
+                                            className={darkMode ? "dark" : ""}
+                                            variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            onClick={() => {
+                                                this.setState({ brushPage: brushPage === 0 ? brushPageNames.length - 1 : brushPage - 1 });
+                                            }}
+                                        >
+                                            {brushPage === 0 ? `← Prev (${brushPageNames[brushPageNames.length - 1]})` : `← Prev (${brushPageNames[brushPage - 1]})`}
+                                        </Button>
+
+                                        {/* Next Button */}
+                                        <Button
+                                            className={darkMode ? "dark" : ""}
+                                            variant={`outline-${darkMode ? "light" : "dark"}`}
+                                            onClick={() => {
+                                                this.setState({ brushPage: brushPage === brushPageNames.length - 1 ? 0 : brushPage + 1 });
+                                            }}
+                                        >
+                                            {brushPage === brushPageNames.length - 1 ? `Next (${brushPageNames[0]}) →` : `Next (${brushPageNames[brushPage + 1]}) →`}
+                                        </Button>
+                                    </div>
+                                </Container>
+                                <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                                    <hr></hr>
+                                    <h3><u>Color Scheme</u></h3>
+                                    <Form.Check
+                                        style={{
+                                            alignSelf:"center",
+                                            marginBottom:"10px",
+                                        }}
+                                        checked={this.state.colorSchemeEnabled}
+                                        onChange={()=>this.setState({colorSchemeEnabled:!this.state.colorSchemeEnabled})}
+                                        type="switch"
+                                        label="Enable Color Scheme"
+                                    />
+                                    <Dropdown onSelect={(eventKey) => {
+                                        this.setState({
+                                            selectedColorScheme: eventKey,
+                                            colorScheme: this.colorSchemesList[eventKey]
+                                        });
+                                    }}
+                                    style={{alignSelf:"center",marginBottom:"10px"}}
+                                    >
+                                        <Dropdown.Toggle disabled={!this.state.colorSchemeEnabled} variant={"outline-" + (darkMode ? "light" : "dark")}
+                                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
+                                            <span>{this.state.selectedColorScheme}</span>
+                                            <div style={{ display: "flex", gap: "2px" }}>
+                                                {
+                                                    this.colorSchemesList[this.state.selectedColorScheme]?.map((color, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            style={{
+                                                                width: "12px",
+                                                                height: "12px",
+                                                                backgroundColor: color,
+                                                                borderRadius: "2px",
+                                                                border: "1px solid rgba(0,0,0,0.2)"
+                                                            }}
+                                                        />
+                                                    ))
+                                                }
+                                            </div>
+                                        </div>
+                                        </Dropdown.Toggle>
+
+                                        <Dropdown.Menu style={{ minWidth: '250px' }}>
                                             {
-                                                this.colorSchemesList[this.state.selectedColorScheme]?.map((color, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        style={{
-                                                            width: "12px",
-                                                            height: "12px",
-                                                            backgroundColor: color,
-                                                            borderRadius: "2px",
-                                                            border: "1px solid rgba(0,0,0,0.2)"
-                                                        }}
-                                                    />
+                                                this.colorSchemeNames.map((name) => (
+                                                    <Dropdown.Item eventKey={name} key={name}>
+                                                        <div style={{
+                                                            display: "flex",
+                                                            justifyContent: "space-between",
+                                                            alignItems: "center"
+                                                        }}>
+                                                            <span>{name}</span>
+                                                            <div style={{ display: "flex", gap: "2px", marginLeft: "10px", flexWrap: "nowrap" }}>
+                                                                {
+                                                                    this.colorSchemesList[name].map((color, idx) => (
+                                                                        <div
+                                                                            key={idx}
+                                                                            style={{
+                                                                                width: "12px",
+                                                                                height: "12px",
+                                                                                backgroundColor: color,
+                                                                                borderRadius: "2px",
+                                                                                border: "1px solid rgba(0,0,0,0.2)"
+                                                                            }}
+                                                                        />
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </Dropdown.Item>
                                                 ))
                                             }
-                                        </div>
-                                    </div>
-                                    </Dropdown.Toggle>
-
-                                    <Dropdown.Menu style={{ minWidth: '250px' }}>
-                                        {
-                                            this.colorSchemeNames.map((name) => (
-                                                <Dropdown.Item eventKey={name} key={name}>
-                                                    <div style={{
-                                                        display: "flex",
-                                                        justifyContent: "space-between",
-                                                        alignItems: "center"
-                                                    }}>
-                                                        <span>{name}</span>
-                                                        <div style={{ display: "flex", gap: "2px", marginLeft: "10px", flexWrap: "nowrap" }}>
-                                                            {
-                                                                this.colorSchemesList[name].map((color, idx) => (
-                                                                    <div
-                                                                        key={idx}
-                                                                        style={{
-                                                                            width: "12px",
-                                                                            height: "12px",
-                                                                            backgroundColor: color,
-                                                                            borderRadius: "2px",
-                                                                            border: "1px solid rgba(0,0,0,0.2)"
-                                                                        }}
-                                                                    />
-                                                                ))
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </Dropdown.Item>
-                                            ))
-                                        }
-                                    </Dropdown.Menu>
-                                </Dropdown>
-                                <Form.Check
-                                    style={{
-                                        alignSelf:"center",
-                                        marginBottom:"10px",
-                                    }}
-                                    disabled={!this.state.colorSchemeEnabled}
-                                    checked={this.state.gradientModeEnabled}
-                                    onChange={()=>this.setState({gradientModeEnabled:!this.state.gradientModeEnabled})}
-                                    type="switch"
-                                    label="Enable Color Blending (Beta)"
-                                />
-                            </Container>
-                            <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                                <hr></hr>
-                                <h3><u>Mouse Settings</u></h3>
-                                <p style={{fontSize:"20px"}}>Brush Anchor Position: <strong>{["Top Left","Top","Top Right","Left","Center","Right","Bottom Left","Bottom","Bottom Right"][this.state.brushAnchorPosition]}</strong></p>
-                                <Container className={"mouse-align-container"}>
-                                    <Row className={"mouse-align-row"}>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:0})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===0 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===0 ? "✔" : ""}</Button>
-                                        </Col>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:1})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===1 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===1 ? "✔" : ""}</Button>
-                                        </Col>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:2})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===2 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===2 ? "✔" : ""}</Button>
-                                        </Col>
-                                    </Row>
-                                    <Row className={"mouse-align-row"}>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:3})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===3 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===3 ? "✔" : ""}</Button>
-                                        </Col>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:4})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===4 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===4 ? "✔" : ""}</Button>
-                                        </Col>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:5})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===5 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===5 ? "✔" : ""}</Button>
-                                        </Col>
-                                    </Row>
-                                    <Row className={"mouse-align-row"}>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:6})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===6 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===6 ? "✔" : ""}</Button>
-                                        </Col>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:7})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===7 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===7 ? "✔" : ""}</Button>
-                                        </Col>
-                                        <Col className={"mouse-align-col"}>
-                                            <Button onClick={()=>this.setState({brushAnchorPosition:8})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===8 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===8 ? "✔" : ""}</Button>
-                                        </Col>
-                                    </Row>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                    <Form.Check
+                                        style={{
+                                            alignSelf:"center",
+                                            marginBottom:"10px",
+                                        }}
+                                        disabled={!this.state.colorSchemeEnabled}
+                                        checked={this.state.gradientModeEnabled}
+                                        onChange={()=>this.setState({gradientModeEnabled:!this.state.gradientModeEnabled})}
+                                        type="switch"
+                                        label="Enable Color Blending (Beta)"
+                                    />
                                 </Container>
-                            </Container>
-                            <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                                <hr></hr>
-                                <h3><u>Canvas Settings</u></h3>
-                                <Row>
-                                    <Col xs={12} md={6}>
-                                        <Form.Check
-                                            style={{
-                                                alignSelf:"center",
-                                                marginBottom:"10px",
-                                                textAlign:"left"
-                                            }}
-                                            checked={this.state.gridEnabled}
-                                            onChange={()=>this.setState({gridEnabled:!this.state.gridEnabled})}
-                                            type="switch"
-                                            label="Display Grid"
-                                        />
-                                    </Col>
-                                    <Col xs={12} md={6}>
-                                        <Form.Check
-                                            style={{
-                                                alignSelf:"center",
-                                                marginBottom:"10px",
-                                                textAlign:"left"
-                                            }}
-                                            checked={this.state.adjNumbersEnabled}
-                                            onChange={()=>this.setState({adjNumbersEnabled:!this.state.adjNumbersEnabled})}
-                                            type="switch"
-                                            label="Display Adjacent Numbers"
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col xs={12} md={6}>
-                                        <Form.Check
-                                            style={{
-                                                alignSelf:"center",
-                                                marginBottom:"10px",
-                                                textAlign:"left"
-                                            }}
-                                            checked={this.state.blobEnabled}
-                                            onChange={()=>this.setState({blobEnabled:!this.state.blobEnabled})}
-                                            type="switch"
-                                            label="Enable Blob Rendering (Beta)"
-                                        />
-                                    </Col>
-                                    <Col xs={12} md={6}>
-                                        <Form.Check
-                                            style={{
-                                                alignSelf:"center",
-                                                marginBottom:"10px",
-                                                textAlign:"left"
-                                            }}
-                                            checked={this.state.randomSeedEnabled}
-                                            onChange={()=>this.setState({randomSeedEnabled:!this.state.randomSeedEnabled})}
-                                            type="switch"
-                                            label="Random Seed (Blob)"
-                                            disabled={!this.state.blobEnabled}
-                                        />
-                                    </Col>
-                                </Row>
-                                    <Form.Range min={0} max={10} value={this.state.jitterScale} onChange={(e)=>{
-                                    this.setState({jitterScale:e.target.value});
-                                }} step={0.01} style={{width:"80%",alignSelf:"center"}} disabled={!this.state.blobEnabled} />
-                                <Form.Label disabled={!this.state.blobEnabled} style={{fontSize:"20px"}}>Jitter Scale: <strong>{this.state.jitterScale}</strong></Form.Label>
-                            </Container>
-                        </Col>
-                    </Row>
+                                <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                                    <hr></hr>
+                                    <h3><u>Mouse Settings</u></h3>
+                                    <p style={{fontSize:"20px"}}>Brush Anchor Position: <strong>{["Top Left","Top","Top Right","Left","Center","Right","Bottom Left","Bottom","Bottom Right"][this.state.brushAnchorPosition]}</strong></p>
+                                    <Container className={"mouse-align-container"}>
+                                        <Row className={"mouse-align-row"}>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:0})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===0 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===0 ? "✔" : ""}</Button>
+                                            </Col>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:1})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===1 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===1 ? "✔" : ""}</Button>
+                                            </Col>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:2})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===2 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===2 ? "✔" : ""}</Button>
+                                            </Col>
+                                        </Row>
+                                        <Row className={"mouse-align-row"}>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:3})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===3 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===3 ? "✔" : ""}</Button>
+                                            </Col>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:4})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===4 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===4 ? "✔" : ""}</Button>
+                                            </Col>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:5})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===5 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===5 ? "✔" : ""}</Button>
+                                            </Col>
+                                        </Row>
+                                        <Row className={"mouse-align-row"}>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:6})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===6 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===6 ? "✔" : ""}</Button>
+                                            </Col>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:7})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===7 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===7 ? "✔" : ""}</Button>
+                                            </Col>
+                                            <Col className={"mouse-align-col"}>
+                                                <Button onClick={()=>this.setState({brushAnchorPosition:8})} className={(darkMode ? "dark" : "")+" mouse-align-btn" + (this.state.brushAnchorPosition===8 ? " pos-selected" : "")} variant={`outline-${darkMode ? "light" : "dark"}`}>{this.state.brushAnchorPosition===8 ? "✔" : ""}</Button>
+                                            </Col>
+                                        </Row>
+                                    </Container>
+                                </Container>
+                                <Container style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                                    <hr></hr>
+                                    <h3><u>Canvas Settings</u></h3>
+                                    <Row>
+                                        <Col xs={12} md={6}>
+                                            <Form.Check
+                                                style={{
+                                                    alignSelf:"center",
+                                                    marginBottom:"10px",
+                                                    textAlign:"left"
+                                                }}
+                                                checked={this.state.gridEnabled}
+                                                onChange={()=>this.setState({gridEnabled:!this.state.gridEnabled})}
+                                                type="switch"
+                                                label="Display Grid"
+                                            />
+                                        </Col>
+                                        <Col xs={12} md={6}>
+                                            <Form.Check
+                                                style={{
+                                                    alignSelf:"center",
+                                                    marginBottom:"10px",
+                                                    textAlign:"left"
+                                                }}
+                                                checked={this.state.adjNumbersEnabled}
+                                                onChange={()=>this.setState({adjNumbersEnabled:!this.state.adjNumbersEnabled})}
+                                                type="switch"
+                                                label="Display Adjacent Numbers"
+                                            />
+                                        </Col>
+                                    </Row>
+                                    <Row>
+                                        <Col xs={12} md={6}>
+                                            <Form.Check
+                                                style={{
+                                                    alignSelf:"center",
+                                                    marginBottom:"10px",
+                                                    textAlign:"left"
+                                                }}
+                                                checked={this.state.blobEnabled}
+                                                onChange={()=>this.setState({blobEnabled:!this.state.blobEnabled})}
+                                                type="switch"
+                                                label="Enable Blob Rendering (Beta)"
+                                            />
+                                        </Col>
+                                        <Col xs={12} md={6}>
+                                            <Form.Check
+                                                style={{
+                                                    alignSelf:"center",
+                                                    marginBottom:"10px",
+                                                    textAlign:"left"
+                                                }}
+                                                checked={this.state.randomSeedEnabled}
+                                                onChange={()=>this.setState({randomSeedEnabled:!this.state.randomSeedEnabled})}
+                                                type="switch"
+                                                label="Random Seed (Blob)"
+                                                disabled={!this.state.blobEnabled}
+                                            />
+                                        </Col>
+                                    </Row>
+                                        <Form.Range min={0} max={10} value={this.state.jitterScale} onChange={(e)=>{
+                                        this.setState({jitterScale:e.target.value});
+                                    }} step={0.01} style={{width:"80%",alignSelf:"center"}} disabled={!this.state.blobEnabled} />
+                                    <Form.Label disabled={!this.state.blobEnabled} style={{fontSize:"20px"}}>Jitter Scale: <strong>{this.state.jitterScale}</strong></Form.Label>
+                                </Container>
+                            </Offcanvas.Body>
+                        </Offcanvas>
+                    </Container>
                     <HowToPlay darkMode={darkMode}></HowToPlay>
                 </div>
                 )}

@@ -257,3 +257,29 @@ a.dark {
   background:#052c65;
   border-color:#052c65;
 }
+
+/* Offcanvas (Brush) */
+
+/* dark theme for Offcanvas */
+.offcanvas.dark {
+  background-color: #121212;
+  color: white;
+}
+
+.offcanvas.dark .offcanvas-header,
+.offcanvas.dark .offcanvas-body {
+  background-color: #121212;
+  color: white;
+  border-color: #333;
+}
+
+/* bt styles (optional) */
+.offcanvas.dark button.btn-close {
+  filter: invert(1);
+}
+
+/* .offcanvas.dark .btn {
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+} */
