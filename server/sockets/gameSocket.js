@@ -3,7 +3,8 @@ const { gameOfLife, initBoard, resizeBoard } = require("../game/gameEngine.js");
 module.exports = function(io) {
     // modules
     const crypto = require("crypto");
-
+    const {uniqueNamesGenerator,adjectives,colors,animals} = require("unique-names-generator");
+    
     const rooms = {};
 
     
@@ -15,11 +16,14 @@ module.exports = function(io) {
     };
 
     const generateRandomUsername = () => {
-        const adjectives = ["Quick", "Lazy", "Happy", "Sad", "Angry", "Excited", "Bored"];
-        const nouns = ["Fox", "Dog", "Cat", "Bird", "Fish", "Lion", "Tiger"];
-        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-        return `${randomAdjective}${randomNoun}${Math.floor(Math.random() * 100)}`;
+        const randomName = uniqueNamesGenerator({ 
+            dictionaries: [adjectives, colors, animals] ,
+            separator:'',
+            style:'capital',
+            length: Math.floor(Math.random()*2)+2,
+        });
+        const randomNumber = Math.floor(Math.random()*100);
+        return `${randomName}${randomNumber>0 ? randomNumber : ''}`;
     }
     
     const DEFAULT_WIDTH = 100, DEFAULT_HEIGHT = 100;
@@ -99,7 +103,6 @@ module.exports = function(io) {
                     io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                     socket.emit("selfJoined",{
                         playerSocketId:socket.id,
-                        // activePlayers:rooms[roomId].activePlayers[socket.id],
                         username
                     });
                 }
@@ -144,7 +147,6 @@ module.exports = function(io) {
                     io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                     socket.emit("selfJoined",{
                         playerSocketId:socket.id,
-                        // activePlayers:rooms[roomId].activePlayers[socket.id],
                         username
                     });
                 } else {
@@ -181,7 +183,6 @@ module.exports = function(io) {
                         io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                         socket.emit("selfJoined",{
                             playerSocketId:socket.id,
-                            // activePlayers:rooms[roomId].activePlayers[socket.id],
                             username
                         });
                     }
@@ -223,7 +224,6 @@ module.exports = function(io) {
                         io.to(roomId).emit("userJoin",username,rooms[roomId].activePlayers);
                         socket.emit("selfJoined",{
                             playerSocketId:socket.id,
-                            // activePlayers:rooms[roomId].activePlayers[socket.id],
                             username
                         });
                     }
