@@ -5,11 +5,11 @@ import {Button,Container,Form,Row,Col,Alert, Dropdown, Offcanvas} from "react-bo
 import Brush from "./components/Brush";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon, FaList, FaEdit } from 'react-icons/fa';
+import { FaChevronDown,FaChevronUp,FaCopy,FaSun,FaMoon, FaList, FaEdit, FaPlay, FaPause, FaStepForward, FaRecycle } from 'react-icons/fa';
 import GameCanvas from "./components/GameCanvas";
 import BrushPreview from "./components/BrushPreview";
 import throttle from "lodash.throttle";
-import NumberContainer from "./components/NumberContainer";
+// import NumberContainer from "./components/NumberContainer";
 import HowToPlay from "./components/HowToPlay";
 import brushes from "./brushList.js";
 import EditBrushModal from "./components/EditBrushModal.js";
@@ -149,8 +149,10 @@ export class Game extends React.Component {
             
 
             // canvas stuff
-            canvasWidth:1600,
-            canvasHeight:900,
+            canvasWidth:800,
+            canvasHeight:800,
+            // canvasWidth:1600,
+            // canvasHeight:900,
             cellWidth:30,
             cellHeight:30,
             canvasMouseX:0,
@@ -640,6 +642,16 @@ export class Game extends React.Component {
         return res;
     }
 
+    isTouchEnabled = () => {
+        return ( 'ontouchstart' in window ) || ( navigator.maxTouchPoints > 0 ) || ( navigator.msMaxTouchPoints > 0 );
+    }
+
+    handleCanvasMouseLeave = () => {
+        const {roomId} = this.state;
+        this.setState({hoverPosition:null,mouseEntered:false,hoverCells:[]});
+        socket.emit("hoverCellBrush",roomId,[],null,this.state.playerSocketId);
+    }
+
     render() {
     const { additionalOptionsEnabled,board,isRunning,username,roomId,activePlayers,activePlayersListOpened,activePlayersListWidth,brushPreviewOpened,sidebarWidth,boardWidth,boardHeight,isJoined,darkMode,iterations,cellWidth,cellHeight,brushPage,brushPageNames,modalCellHeight,modalCellWidth } = this.state;
     return (
@@ -887,6 +899,11 @@ export class Game extends React.Component {
                                     socket.emit("updateCellBrush",roomId,i+offsetI-1,j+offsetJ-1,this.state.currentBrushBoard);
                                 }
                                 this.setState({mouseIsDown:false,isDragging:false});
+
+                                // immediately do mouseleave event after detecting touchscreen
+                                if (this.isTouchEnabled()) {
+                                    this.handleCanvasMouseLeave();
+                                }
                             }}
                             onMouseMove={(e)=>{
                                 e.preventDefault();
@@ -983,15 +1000,18 @@ export class Game extends React.Component {
                                     this.throttledEmitHover(newHoverCells,adjustedX,adjustedY);
                                 }
                             }}
-                            onMouseLeave={()=>{
-                                this.setState({hoverPosition:null,mouseEntered:false,hoverCells:[]});
-
-                                socket.emit("hoverCellBrush",roomId,[],null,this.state.playerSocketId);
-                            }}
+                            onMouseLeave={this.handleCanvasMouseLeave}
                             onTransformChange={this.handleTransformChange}
+                            stats={
+                                [
+                                    ["# Iterations",iterations],
+                                    ["Population",board.flat().reduce((a,b)=>a+b,0)]
+                                ]
+                            }
+                            coords={[this.state.mouseCellXPos,this.state.mouseCellYPos]}
                             ></GameCanvas>
                             <br></br>
-                            <div width="100%" style={{display:"flex", justifyContent:"space-evenly", marginTop:"10px"}}>
+                            {/* <div width="100%" style={{display:"flex", justifyContent:"space-evenly", marginTop:"10px"}}>
                                 <NumberContainer
                                     title={"Iterations:"}
                                     number={iterations}
@@ -1008,9 +1028,9 @@ export class Game extends React.Component {
                                     darkMode={darkMode}
                                     number={board.flat().reduce((a,b)=>a+b,0)}
                                 ></NumberContainer>
-                            </div>
+                            </div> */}
                             {/* <p>Iterations: <strong>{iterations}</strong>, Population: <strong>{board.flat().reduce((a,b)=>a+b,0)}</strong></p> */}
-                            <br></br>
+                            {/* <br></br> */}
                             <Container style={{width:"50%"}}>
                                 <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
                                 <Form.Range min={10} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
@@ -1018,13 +1038,13 @@ export class Game extends React.Component {
                             <br></br>
                             <Container className="d-flex" id="main-container">
                                 <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleToggleRun}>
-                                    {isRunning ? "Pause" : "Play"}
+                                    {isRunning ? <FaPause/> : <FaPlay/>} {isRunning ? "Pause" : "Play"}
                                 </Button>
                                 <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleStepOnce} disabled={isRunning}>
-                                    Step
+                                    <FaStepForward/> Step
                                 </Button>
                                 <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleReset}>
-                                    Reset
+                                    <FaRecycle/> Reset
                                 </Button>
                             </Container>
                             <br></br>

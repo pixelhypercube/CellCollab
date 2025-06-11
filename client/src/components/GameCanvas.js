@@ -16,6 +16,8 @@ export default class GameCanvas extends React.Component {
             colorScheme:this.props.colorScheme,
             initialPinchDistance:null,
             initialScale:null,
+
+            mouseIsHovering:false,
         };
 
 
@@ -37,6 +39,14 @@ export default class GameCanvas extends React.Component {
             canvas.addEventListener('mousedown', this.handleMouseDown);
             canvas.addEventListener('mousemove', this.handleMouseMove);
             canvas.addEventListener('mouseup', this.handleMouseUp);
+
+            canvas.addEventListener('mouseenter',()=>{
+                this.setState({mouseIsHovering:true});
+            });
+            canvas.addEventListener('mouseleave',()=>{
+                this.setState({mouseIsHovering:false});
+            });
+
             canvas.addEventListener('wheel', this.handleWheel, { passive: false });
             // TOUCH EVENTS
             canvas.addEventListener("touchstart",this.handleTouchStart);
@@ -380,6 +390,13 @@ export default class GameCanvas extends React.Component {
         }
 
         ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        // render stats
+
+        const {stats,coords,canvasWidth,canvasHeight} = this.props;
+
+        this.renderStats(0,0,175,35,stats);
+        this.renderCoords(canvasWidth-60,canvasHeight-50,60,50,coords);
     }
 
     renderPlayerLabel = (xPos,yPos,fontSize,username,ctx) => {
@@ -633,6 +650,49 @@ export default class GameCanvas extends React.Component {
             ctx.font = `20px Rubik`;
             ctx.textAlign="center";
             ctx.fillText(numNeighbors, xPos + (cellWidth / 2), yPos + (cellHeight/1.33));
+        }
+    }
+
+    renderStats = (x,y,w,h,stats) => {
+        const {darkMode} = this.props;
+        const canvas = this.canvasRef.current;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = darkMode ? `rgba(255,255,255,0.2)` : `rgba(0,0,0,0.2)`;
+        ctx.fillRect(x,y,w,h);
+        ctx.fillStyle = darkMode ? "white" : "black";
+        if (stats) {
+            let index = 0;
+            for (let stat of stats) {
+                const [title,variable] = stat;
+                ctx.font = "14px Rubik";
+                ctx.textAlign = "left";
+                ctx.fillText(title,x+10,y+15+index*15,w);
+                ctx.textAlign = "right";
+                ctx.fillText(variable,x+w-10,y+15+index*15,w);
+                index++;
+            }
+        }
+    }
+
+    renderCoords = (x,y,w,h,coords) => {
+        if (this.state.mouseIsHovering) {
+            const {darkMode} = this.props;
+            const {board} = this.state;
+            const canvas = this.canvasRef.current;
+            const ctx = canvas.getContext("2d");
+
+            ctx.fillStyle = darkMode ? `rgba(255,255,255,0.2)` : `rgba(0,0,0,0.2)`;
+            ctx.fillRect(x,y,w,h);
+            ctx.fillStyle = darkMode ? "white" : "black";
+
+            if (coords && board) {
+                const [xPos,yPos] = coords;
+                ctx.font = "14px Rubik";
+                ctx.textAlign = "center";
+                ctx.fillText(`(${xPos-1},${yPos-1})`,x+w/2,y+h/2-5);
+                ctx.fillText(board?.[yPos-1]?.[xPos-1]===1 ? "Alive" : "Dead",x+w/2,y+h/2+15);
+            }
         }
     }
 
