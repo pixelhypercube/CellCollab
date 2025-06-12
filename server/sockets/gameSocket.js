@@ -17,10 +17,10 @@ module.exports = function(io) {
 
     const generateRandomUsername = () => {
         const randomName = uniqueNamesGenerator({ 
-            dictionaries: [adjectives, colors, animals] ,
+            dictionaries: [colors, animals] ,
             separator:'',
             style:'capital',
-            length: Math.floor(Math.random()*2)+2,
+            length: Math.floor(Math.random()*2)+1,
         });
         const randomNumber = Math.floor(Math.random()*100);
         return `${randomName}${randomNumber>0 ? randomNumber : ''}`;

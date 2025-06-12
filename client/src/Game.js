@@ -534,26 +534,6 @@ export class Game extends React.Component {
                     hoverCells: Array.from({ length: 100 },() => Array(100).fill(0))
                 });
             }
-
-            // no need the alert anymore
-            // MySwal.fire({
-            //     toast:true,
-            //     title:"Please enter a Room ID!",
-            //     timer: 2000,
-            //     timerProgressBar: true,
-            //     icon:"warning",
-            //     didOpen:() => {
-            //         const popup = document.querySelector("div:where(.swal2-container).swal2-center>.swal2-popup");
-            //         if (popup) {
-            //             popup.style.width = '250px';
-            //             popup.style.fontSize = '14px';
-            //             popup.style.padding = "10px";
-            //             popup.style.top = "-75px";
-            //         }
-            //         const popupTitle = document.querySelector(".swal2-toast h2:where(.swal2-title)");
-            //         if (popupTitle) popupTitle.style.margin = "0px 1em";
-            //     }
-            // });
         }
     };
 
@@ -1031,21 +1011,21 @@ export class Game extends React.Component {
                             </div> */}
                             {/* <p>Iterations: <strong>{iterations}</strong>, Population: <strong>{board.flat().reduce((a,b)=>a+b,0)}</strong></p> */}
                             {/* <br></br> */}
-                            <Container style={{width:"50%"}}>
-                                <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
-                                <Form.Range min={10} max={1000} value={this.state.speed} onChange={this.handleToggleSpeed} />
-                            </Container>
-                            <br></br>
                             <Container className="d-flex" id="main-container">
-                                <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleToggleRun}>
+                                <Button className={"main-container-btn "+(darkMode ? "dark" : "")} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleToggleRun}>
                                     {isRunning ? <FaPause/> : <FaPlay/>} {isRunning ? "Pause" : "Play"}
                                 </Button>
-                                <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleStepOnce} disabled={isRunning}>
+                                <Button className={"main-container-btn "+(darkMode ? "dark" : "")} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleStepOnce} disabled={isRunning}>
                                     <FaStepForward/> Step
                                 </Button>
-                                <Button className={darkMode ? "dark" : ""} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleReset}>
+                                <Button className={"main-container-btn "+(darkMode ? "dark" : "")} variant={`outline-${darkMode ? "light" : "dark"}`} onClick={this.handleReset}>
                                     <FaRecycle/> Reset
                                 </Button>
+                            </Container>
+                            <br></br>
+                            <Container style={{width:"50%"}}>
+                                <Form.Label>Animation Speed: <strong>{this.state.speed} ms</strong> / tick</Form.Label>
+                                <Form.Range min={10} max={1000} style={{direction:"rtl"}} value={this.state.speed} onChange={this.handleToggleSpeed} />
                             </Container>
                             <br></br>
                             {/* <Button

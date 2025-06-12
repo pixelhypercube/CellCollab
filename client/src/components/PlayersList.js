@@ -22,7 +22,9 @@ export default class PlayersList extends React.Component {
                 fontSize:"13px"
             }}>
                 <h5 className="mt-2"><u>Players List:</u></h5>
-                <Table variant={darkMode ? "dark" : "light"} striped bordered hover>
+                <Table style={{
+                    maxWidth:"175px",
+                }} variant={darkMode ? "dark" : "light"} striped bordered hover>
                     <thead>
                         <tr>
                             <th className="p-1">#</th>
@@ -31,13 +33,16 @@ export default class PlayersList extends React.Component {
                     </thead>
                     <tbody style={{
                         maxHeight:"250px",
-                        overflowY:"auto"
+                        overflowY:"auto",
                     }}>
                         {
                             this.getUserNames().map((player, idx) => (
                                 <tr style={{maxHeight:"10px"}} key={idx}>
                                     <td className="p-0">{idx+1}</td>
-                                    <td className="p-0">{player}</td>
+                                    <td className="p-0" style={{
+                                        maxWidth:"125px",
+                                        wordWrap:"break-word"
+                                    }}><span>{player}</span></td>
                                 </tr>
                             ))
                         }

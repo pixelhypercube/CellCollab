@@ -395,8 +395,8 @@ export default class GameCanvas extends React.Component {
 
         const {stats,coords,canvasWidth,canvasHeight} = this.props;
 
-        this.renderStats(0,0,175,35,stats);
-        this.renderCoords(canvasWidth-60,canvasHeight-50,60,50,coords);
+        this.renderStats(0,0,225,50,stats);
+        this.renderCoords(canvasWidth-80,canvasHeight-70,80,70,coords);
     }
 
     renderPlayerLabel = (xPos,yPos,fontSize,username,ctx) => {
@@ -665,11 +665,11 @@ export default class GameCanvas extends React.Component {
             let index = 0;
             for (let stat of stats) {
                 const [title,variable] = stat;
-                ctx.font = "14px Rubik";
+                ctx.font = "20px Rubik";
                 ctx.textAlign = "left";
-                ctx.fillText(title,x+10,y+15+index*15,w);
+                ctx.fillText(title,x+10,y+20+index*22,w);
                 ctx.textAlign = "right";
-                ctx.fillText(variable,x+w-10,y+15+index*15,w);
+                ctx.fillText(variable,x+w-10,y+20+index*22,w);
                 index++;
             }
         }
@@ -688,10 +688,10 @@ export default class GameCanvas extends React.Component {
 
             if (coords && board) {
                 const [xPos,yPos] = coords;
-                ctx.font = "14px Rubik";
+                ctx.font = "20px Rubik";
                 ctx.textAlign = "center";
-                ctx.fillText(`(${xPos-1},${yPos-1})`,x+w/2,y+h/2-5);
-                ctx.fillText(board?.[yPos-1]?.[xPos-1]===1 ? "Alive" : "Dead",x+w/2,y+h/2+15);
+                ctx.fillText(`(${xPos-1},${yPos-1})`,x+w/2,y+h/2-10);
+                ctx.fillText(board?.[yPos-1]?.[xPos-1]===1 ? "Alive" : "Dead",x+w/2,y+h/2+20);
             }
         }
     }

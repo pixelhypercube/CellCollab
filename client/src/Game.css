@@ -43,7 +43,11 @@ footer {
 /* main container */
 #main-container {
   max-width:500px;
-  justify-content: space-evenly;
+  justify-content: center;
+}
+
+.main-container-btn {
+  margin:0px 5px 0px 5px;
 }
 
 /* table */
