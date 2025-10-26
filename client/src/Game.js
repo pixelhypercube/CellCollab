@@ -745,7 +745,7 @@ export class Game extends React.Component {
                                 top: '50%',
                                 left: `${activePlayersListOpened ? '0' : (-activePlayersListWidth+10)}px`,
                                 transform: 'translateY(-50%)',
-                                backgroundColor: darkMode ? '#333' : '#eee',
+                                // backgroundColor: darkMode ? '#333' : '#eee',
                                 color: darkMode ? '#fff' : '#000',
                                 borderTopRightRadius: '8px',
                                 borderBottomRightRadius: '8px',
@@ -754,20 +754,30 @@ export class Game extends React.Component {
                                 width:`${activePlayersListWidth+12}px`,
                                 maxHeight: '90vh',
                                 overflowY: 'auto',
-                                transition: 'left 0.3s ease',
+                                transition: 'left 0.25s ease',
                                 display:"flex",
                                 padding:"5px"
                             }}
-                            onMouseEnter={()=>this.setState({activePlayersListOpened:true})}
-                            onMouseLeave={()=>this.setState({activePlayersListOpened:false})}
-                            onClick={()=>this.setState({activePlayersListOpened:!activePlayersListOpened})}
+                            id="player-list-sidebar"
+                            className={`
+                                ${darkMode ? "dark-sidebar" : "light-sidebar"} ${!activePlayersListOpened ? "list-closed" : ""}
+                            `}
+                            // onMouseEnter={()=>this.setState({activePlayersListOpened:true})}
+                            // onMouseLeave={()=>this.setState({activePlayersListOpened:false})}
+                            onClick={()=>{
+                                const {activePlayersListOpened} = this.state;
+                                if (!activePlayersListOpened)
+                                    this.setState({activePlayersListOpened:!activePlayersListOpened})
+                            }}
                         >
                             <PlayersList 
                             style={{
                                 display:activePlayersListOpened ? "block" : "none"
                             }}
                             darkMode={darkMode} 
-                            activePlayers={activePlayers} />
+                            activePlayers={activePlayers} 
+                            onClose={()=>this.setState({ activePlayersListOpened: false })}
+                            />
                             <span style={{
                                 writingMode:"vertical-lr",
                                 fontSize:"12px",
@@ -775,14 +785,17 @@ export class Game extends React.Component {
                             }}>Players List</span>
                         </div>
                         <div
-                            onClick={() => this.setState({ brushPreviewOpened: !brushPreviewOpened })}
-                            onMouseEnter={() => this.setState({ brushPreviewOpened: true })}
+                            onClick={() => this.setState({ brushPreviewOpened: !brushPreviewOpened},()=>{
+                                console.log(`${darkMode ? "dark-sidebar" : "light-sidebar"} ${!this.state.brushPreviewOpened ? "list-closed" : "list-opened"}`);
+                            })}
+                            // onMouseEnter={() => this.setState({ brushPreviewOpened: true })}
                             style={{
                                 position: 'fixed',
                                 top: '50%',
                                 right: this.state.brushPreviewOpened ? `${sidebarWidth}px` : '0',
                                 transform: 'translateY(-50%)',
-                                backgroundColor: darkMode ? '#333' : '#eee',
+                                // backgroundColor: darkMode ? '#333' : '#eee',
+                                // backgroundColor: this.state.brushPreviewOpened ? (darkMode ? "#333" : "#eee") : "auto",
                                 color: darkMode ? '#fff' : '#000',
                                 padding: '6px 6px',
                                 borderTopLeftRadius: '8px',
@@ -796,8 +809,11 @@ export class Game extends React.Component {
                                 boxShadow: '0 0 8px rgba(0,0,0,0.2)',
                                 transition: 'right 0.3s ease'
                             }}
+                            className={`
+                                ${darkMode ? "dark-sidebar" : "light-sidebar"} ${!this.state.brushPreviewOpened ? "list-closed" : "list-opened"}
+                            `}
                             >
-                            ⚙️ Settings Panel
+                            🛠️ Settings Panel
                         </div>
 
                         <Container
@@ -1211,7 +1227,7 @@ export class Game extends React.Component {
                                         checked={this.state.colorSchemeEnabled}
                                         onChange={()=>this.setState({colorSchemeEnabled:!this.state.colorSchemeEnabled})}
                                         type="switch"
-                                        label="Enable Color Scheme"
+                                        label="Enable Colors"
                                     />
                                     <Dropdown onSelect={(eventKey) => {
                                         this.setState({
@@ -1332,7 +1348,7 @@ export class Game extends React.Component {
                                     <hr></hr>
                                     <h3><u>Canvas Settings</u></h3>
                                     <Row>
-                                        <Col xs={12} md={6}>
+                                        <Col xs={12} md={12}>
                                             <Form.Check
                                                 style={{
                                                     alignSelf:"center",
@@ -1345,7 +1361,7 @@ export class Game extends React.Component {
                                                 label="Display Grid"
                                             />
                                         </Col>
-                                        <Col xs={12} md={6}>
+                                        <Col xs={12} md={12}>
                                             <Form.Check
                                                 style={{
                                                     alignSelf:"center",
@@ -1360,7 +1376,7 @@ export class Game extends React.Component {
                                         </Col>
                                     </Row>
                                     <Row>
-                                        <Col xs={12} md={6}>
+                                        <Col xs={12} md={12}>
                                             <Form.Check
                                                 style={{
                                                     alignSelf:"center",
@@ -1373,7 +1389,7 @@ export class Game extends React.Component {
                                                 label="Enable Blob Rendering (Beta)"
                                             />
                                         </Col>
-                                        <Col xs={12} md={6}>
+                                        <Col xs={12} md={12}>
                                             <Form.Check
                                                 style={{
                                                     alignSelf:"center",

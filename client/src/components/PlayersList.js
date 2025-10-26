@@ -1,5 +1,8 @@
 import React from "react";
 import { Table, Container } from "react-bootstrap";
+import { FaTimes } from "react-icons/fa";
+
+import "./PlayersList.css";
 
 export default class PlayersList extends React.Component {
     constructor(props) {
@@ -21,7 +24,19 @@ export default class PlayersList extends React.Component {
                 backgroundColor: darkMode ? '#333' : '#eee',
                 fontSize:"13px"
             }}>
-                <h5 className="mt-2"><u>Players List:</u></h5>
+                <div className="w-100 d-flex justify-content-between">
+                    <h6 style={{fontSize:"18px"}} className="mt-2"><u>Players List:</u></h6>
+                    <div 
+                        className="d-flex align-items-center"
+                        onClick={(e)=>{
+                            e.stopPropagation();
+
+                            if (this.props.onClose) this.props.onClose();
+                        }}
+                    >
+                        <FaTimes className="close-icon"size={18}/>
+                    </div>
+                </div>
                 <Table style={{
                     maxWidth:"175px",
                 }} variant={darkMode ? "dark" : "light"} striped bordered hover>

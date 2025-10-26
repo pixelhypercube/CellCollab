@@ -382,7 +382,13 @@ export default class GameCanvas extends React.Component {
                         // label rendering
                         if (hoverPosition && username) {
                             const {x,y} = hoverPosition;
-                            this.renderPlayerLabel(x,y,12,username,ctx);
+
+                            // transform
+                            const {scale, offset} = this.state;
+                            const screenX = x * scale + offset.x;
+                            const screenY = y * scale + offset.y;
+
+                            this.renderPlayerLabel(screenX,screenY,12,username,ctx);
                         }
                     }
                 }
@@ -403,24 +409,64 @@ export default class GameCanvas extends React.Component {
 
         // cursor image
         if (this.cursorImageLoaded) {
+
+            ctx.save();
+
+            // translate corods;
+            const tx = -25;
+            const ty = -25;
+
+            ctx.setTransform(1,0,0,1,tx,ty);
+
+            // CURSOR IMAGE
             const imgWidth = 24;
             const imgHeight = 24;
-            ctx.drawImage(this.cursorImage, xPos-imgWidth/2,yPos-imgHeight/2,imgWidth,imgHeight);
-            const strWidth = username.length * fontSize * 0.6;
-            const strHeight = fontSize * 1.2;
+            ctx.drawImage(this.cursorImage, xPos-imgWidth/2, yPos-imgHeight/2, imgWidth, imgHeight);
+
+            // FONT RENDERING
+
             const labelX = xPos + 2;
             const labelY = yPos;
 
             const offsetX = 5, offsetY = 5;
+            const fontSize = 20;
+            const fontName = "Rubik";
 
-            ctx.fillStyle = this.props.darkMode ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)";
-            ctx.fillRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
-            ctx.strokeStyle = this.props.darkMode ? "white" : "black";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
-            ctx.fillStyle = this.props.darkMode ? "white" : "black";
-            ctx.font = `${fontSize}px Rubik`;
-            ctx.fillText(username,labelX+offsetX,labelY+fontSize+offsetY);
+            
+
+            ctx.font = `${fontSize}px, ${fontName}`;
+
+            document.fonts.load(ctx.font)
+            .then(()=>{
+                const metrics = ctx.measureText(username);
+                const textWidth = metrics.width;
+                const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+                const rectXPos = labelX + offsetX + tx;
+                const rectYPos = labelY + fontSize + offsetY + ty;
+
+                ctx.fillStyle = this.props.darkMode ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)";
+                ctx.fillRect(rectXPos,rectYPos - metrics.actualBoundingBoxAscent,textWidth,textHeight);
+                ctx.strokeStyle = this.props.darkMode ? "white" : "black";
+                ctx.strokeRect(rectXPos,rectYPos - metrics.actualBoundingBoxAscent,textWidth,textHeight);
+                
+                // fill text
+                ctx.fillStyle = this.props.darkMode ? "white" : "black";
+                ctx.textAlign = "left";
+                ctx.fillText(username,rectXPos,rectYPos);
+            });
+
+            // const offsetX = 5, offsetY = 5;
+
+            // ctx.fillStyle = this.props.darkMode ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)";
+            // ctx.fillRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
+            // ctx.strokeStyle = this.props.darkMode ? "white" : "black";
+            // ctx.lineWidth = 2;
+            // ctx.strokeRect(xPos+offsetX,yPos+offsetY,strWidth,strHeight);
+            // ctx.fillStyle = this.props.darkMode ? "white" : "black";
+            // ctx.font = `${fontSize}px Rubik`;
+            // ctx.textAlign = "center";
+            // ctx.fillText(username,labelX+offsetX+40,labelY+fontSize+offsetY);
         }
     }
 

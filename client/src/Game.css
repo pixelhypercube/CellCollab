@@ -287,3 +287,26 @@ a.dark {
   color: white;
   border: 1px solid #555;
 } */
+
+/* PLAYER LIST SIDEBAR & SETTINGS PANEL */
+
+/* dark mode */
+.dark-sidebar.list-closed, .dark-sidebar.list-opened {
+  background-color: #333;
+}
+
+.dark-sidebar.list-closed:hover, .dark-sidebar.list-opened:hover {
+  background-color: #555;
+  cursor:pointer;
+}
+
+/* light mode */
+.light-sidebar.list-closed, .light-sidebar.list-opened {
+  background-color: #eee;
+}
+
+.light-sidebar.list-closed:hover, .light-sidebar.list-opened:hover {
+  background-color: #ccc;
+  cursor:pointer;
+}
+
