@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/CellCollab/static/css/main.44df5c3d.css",
-    "main.js": "/CellCollab/static/js/main.202356c4.js",
+    "main.css": "/CellCollab/static/css/main.a75b7344.css",
+    "main.js": "/CellCollab/static/js/main.bcc9eeb1.js",
     "static/js/453.2648fbfc.chunk.js": "/CellCollab/static/js/453.2648fbfc.chunk.js",
     "static/media/Rubik.ttf": "/CellCollab/static/media/Rubik.3a4acc0356c6ea73f2c3.ttf",
     "index.html": "/CellCollab/index.html",
-    "main.44df5c3d.css.map": "/CellCollab/static/css/main.44df5c3d.css.map",
-    "main.202356c4.js.map": "/CellCollab/static/js/main.202356c4.js.map",
+    "main.a75b7344.css.map": "/CellCollab/static/css/main.a75b7344.css.map",
+    "main.bcc9eeb1.js.map": "/CellCollab/static/js/main.bcc9eeb1.js.map",
     "453.2648fbfc.chunk.js.map": "/CellCollab/static/js/453.2648fbfc.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.44df5c3d.css",
-    "static/js/main.202356c4.js"
+    "static/css/main.a75b7344.css",
+    "static/js/main.bcc9eeb1.js"
   ]
 }
