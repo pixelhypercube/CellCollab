@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Col, Dropdown, Form, Modal, Row } from "react-bootstrap";
-import fullLexicon from "../fullLexicon";
+import fullLexicon from "../data/fullLexicon";
 import Brush from "./Brush";
 import {Slider} from "antd";
 
