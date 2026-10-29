@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 var url;
 const STATE = 'release';
-if (STATE === 'release') url = process.env.APP_API_URL || 'https://mp-conway-sandbox-5b8c5ee7a59a.herokuapp.com';
+if (STATE === 'release') url = process.env.APP_API_URL || 'https://cellcollab-server.onrender.com/';
 else if (STATE === 'debug') url = 'http://localhost:5000';
 
 const socket = io(url);
